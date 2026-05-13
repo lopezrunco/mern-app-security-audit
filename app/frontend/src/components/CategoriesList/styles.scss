@@ -1,0 +1,27 @@
+@import '../../Variables.scss';
+
+.categories-list {
+    margin-bottom: 3rem;
+
+    .list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+
+        small {
+            display: block;
+            color: lighten($color: $primary-color, $amount: 10);
+            transition: $main-transition;
+
+            i {
+                margin-right: .5rem;
+            }
+
+            &:hover,
+            &:active {
+                color: lighten($color: $primary-color, $amount: 20);
+                transform: translateX(1rem);
+            }
+        }
+    }
+}

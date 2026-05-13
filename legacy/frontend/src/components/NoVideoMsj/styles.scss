@@ -1,0 +1,21 @@
+@import '../../Variables.scss';
+
+.no-video-msj {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    border: 1px solid $medium-light-color;
+    border-radius: $sm-border-radius;
+    padding: 4rem 1rem;
+
+    p {
+        padding-bottom: 0;
+        margin-bottom: 0;
+    }
+
+    i {
+        font-size: 3rem;
+    }
+}

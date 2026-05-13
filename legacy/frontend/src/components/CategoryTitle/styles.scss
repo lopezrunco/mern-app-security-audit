@@ -1,0 +1,39 @@
+@import '../../Variables.scss';
+
+.category-title {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+    border-top: 2px solid $accent-color;
+    border-bottom: 2px solid $accent-color;
+    margin-bottom: 1rem;
+
+    .content {
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: flex-start;
+
+        h4,
+        a {
+            margin-bottom: 0;
+        }
+
+        a {
+            border: 1px solid $medium-light-color;
+        }
+    }
+}
+
+@media screen and (min-width: 768px) {
+    .category-title {
+        .content {
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+
+            a {
+                margin: 0;
+            }
+        }
+    }
+}

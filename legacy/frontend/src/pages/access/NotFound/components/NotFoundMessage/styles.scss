@@ -1,0 +1,40 @@
+@import '../../../../../Variables.scss';
+
+.not-found {
+    padding: 1rem 0;
+    text-align: center;
+
+    h1 {
+        font-size: 8rem;
+        font-weight: 700;
+    }
+
+    h2 {
+        font-size: 2rem;
+    }
+}
+
+@media screen and (min-width: 1200px) {
+    .not-found {
+        text-align: left;
+
+        h1 {
+            font-size: 11rem;
+        }
+
+        h2,
+        p {
+            display: block;
+        }
+
+        h2 {
+            font-size: 4rem;
+            font-weight: 700;
+            margin-top: 1rem;
+        }
+
+        p {
+            margin: 1rem 0;
+        }
+    }
+}

@@ -1,0 +1,5 @@
+export const ALL = 'ALL'
+export const CONTENT_RIGHT = 'CONTENT_RIGHT'
+export const CONTENT_LEFT = 'CONTENT_LEFT'
+export const IMG_TITLE = 'IMG_TITLE'
+export const DARK = 'DARK'

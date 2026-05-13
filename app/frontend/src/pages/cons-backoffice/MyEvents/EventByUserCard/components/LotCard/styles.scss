@@ -1,0 +1,14 @@
+@import '../../../../../../Variables.scss';
+
+.my-event-lot-card {
+    background-color: $gray-color;
+    border-radius: $sm-border-radius;
+
+    .button.view-more {
+        background-color: darken($color: $gray-color, $amount: 5);
+    }
+
+    iframe {
+        border-radius: $sm-border-radius;
+    }
+}

@@ -1,0 +1,44 @@
+@import '../../../../../../../Variables.scss';
+
+.lot-preview {
+    border-bottom: 1px solid darken($color: $primary-color, $amount: 2);
+    padding: 1rem 0;
+
+    .video-preview {
+        iframe {
+            border-radius: $sm-border-radius;
+        }
+        
+        .no-video-msj {
+            border-color: #e1e1e1a5;
+            color: #e1e1e1a5;
+        }
+    }
+    
+    .info-preview {
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        gap: 1rem;
+
+        p,
+        h4 {
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        h4 {
+            color: $accent-color;
+        }
+
+        a {
+            margin: 0;
+            width: max-content;
+        }
+    }
+
+    &:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+}

@@ -1,0 +1,23 @@
+@import '../../Variables.scss';
+
+.weather {
+    .content-wrapper {
+        overflow: hidden;
+
+        img {
+            display: none;
+        }
+    }
+}
+
+@media screen and (min-width: 991px) {
+    .weather {
+        .content-wrapper {
+            img {
+                display: block;
+                height: 20px;
+                transform: scale(1.5);
+            }
+        }
+    }
+}

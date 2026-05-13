@@ -1,0 +1,17 @@
+@import '../../../../Variables.scss';
+
+.my-event-card {
+    border-radius: $sm-border-radius;
+    overflow: hidden;
+    border: 1px solid $medium-light-color;
+    margin-bottom: 1.5rem;
+
+    img {
+        width: 100%;
+        height: auto;
+    }
+
+    .content {
+        padding: 2rem 2rem 1rem;
+    }
+}

@@ -1,0 +1,32 @@
+@import '../../../../../Variables.scss';
+
+.preoffer-card {
+    .amount-accepted-refused {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+
+        .acepted,
+        .refused {
+            border-radius: 0.3rem;
+            padding: 0.3rem 0.6rem;
+            margin: 0 0.3rem;
+            background-color: $medium-light-color;
+            font-size: 0.8rem;
+        }
+
+        .acepted {
+            background-color: $primary-color;
+            color: $light-color;
+        }
+    }
+
+    .preoffer-details {
+        iframe {
+            width: 100%;
+            height: 160px;
+            border-radius: $sm-border-radius;
+        }
+    }
+}

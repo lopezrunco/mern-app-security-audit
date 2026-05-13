@@ -1,0 +1,17 @@
+@import '../../../Variables.scss';
+
+.backoffice-home-page {
+    .admin-home-card a {
+        width: 100%;
+        cursor: pointer;
+        padding: 1rem 1.2rem;
+        margin-bottom: 1rem;
+        border: 1px solid $medium-dark-color;
+        border-radius: $sm-border-radius;
+
+        &:hover {
+            background-color: $accent-color;
+        }
+    }
+
+}

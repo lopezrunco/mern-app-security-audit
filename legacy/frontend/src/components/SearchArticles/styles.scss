@@ -1,0 +1,41 @@
+@import '../../Variables.scss';
+
+.search-article {
+    max-width: 250px;
+
+    .wrapper {
+        position: relative;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+        input {
+            width: calc(100% - 60px);
+            height: 3rem;
+            border: none;
+            outline: none;
+            padding-left: 1rem;
+            font-weight: 400;
+            color: $medium-dark-color;
+        }
+
+        button {
+            width: 60px;
+            padding: 0;
+            position: absolute;
+            font-size: 1.3rem;
+            color: $medium-light-color;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            overflow: hidden;
+            border: none;
+            background: none;
+            outline: none;
+            transition: $main-transition;
+
+            &:hover,
+            &:active {
+                color: $medium-dark-color;
+            }
+        }
+    }
+}

@@ -1,0 +1,49 @@
+@import '../../Variables.scss';
+
+.latest-posts-aside {
+    margin-bottom: 3rem;
+
+    a {
+        width: 100%;
+
+        .wapper {
+            margin-bottom: 1rem;
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 1rem;
+
+            >.post-img {
+                grid-column: 1/3;
+
+                img {
+                    width: 100%;
+                    height: 100%;
+                    object-fit: cover;
+                    border-radius: $sm-border-radius;
+                }
+            }
+
+            >.content {
+                grid-column: 3/6;
+
+                p {
+                    text-transform: capitalize;
+                    margin-bottom: 0;
+                    color: lighten($color: $primary-color, $amount: 10);
+                    transition: $main-transition;
+
+                    &:hover,
+                    &:active {
+                        color: lighten($color: $primary-color, $amount: 20);
+                    }
+                }
+
+                small {
+                    color: darken($color: $medium-light-color, $amount: 10);
+                }
+            }
+        }
+    }
+
+
+}

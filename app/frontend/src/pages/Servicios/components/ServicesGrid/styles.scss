@@ -1,0 +1,72 @@
+@import '../../../../Variables.scss';
+
+.services-grid {
+    border-bottom: 1px solid $medium-light-color;
+
+    .item {
+        overflow: hidden;
+        text-align: center;
+        padding: 1rem 0;
+
+        img {
+            width: 100px;
+            padding: 0 0 1rem;
+        }
+
+        p {
+            color: $medium-dark-color;
+        }
+    }
+}
+
+.video-service {
+    overflow: hidden;
+
+    .title {
+        text-align: center;
+        padding-bottom: 5rem;
+
+        img {
+            width: 100px;
+            padding: 0 0 1rem;
+        }
+
+        .separator {
+            margin: 0 auto;
+        }
+
+        p {
+            max-width: 500px;
+            margin: 0 auto 1rem;
+            color: $medium-dark-color;
+        }
+    }
+
+    .item {
+        margin-bottom: 3rem;
+        text-align: center;
+
+        .iframe-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+            .loading-msj {
+                position: absolute;
+            }
+
+            iframe {
+                width: 100%;
+                border-radius: $sm-border-radius;
+                box-shadow: $box-shadow;
+                min-height: 200px;
+                z-index: 999;
+            }
+
+            h5 {
+                text-transform: uppercase;
+                margin-bottom: 1rem;
+            }
+        }
+    }
+}

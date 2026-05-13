@@ -1,0 +1,50 @@
+@import '../../Variables.scss';
+
+footer {
+    padding: 1.5rem 0;
+    margin-bottom: -2rem;
+    background-color: $dark-color;
+    color: $medium-dark-color;
+    border-top: $border;
+
+    .copyright {
+        display: flex;
+        overflow: hidden;
+        flex-direction: column;
+        justify-content: flex-start;
+        gap: 1rem;
+
+        img {
+            max-width: 100px;
+            opacity: .5;
+        }
+    }
+
+    .social {
+        display: flex;
+        justify-content: flex-start;
+        gap: 1rem;
+
+        a {
+            color: $medium-dark-color;
+        }
+    }
+}
+
+@media screen and (min-width: 992px) {
+    footer {
+        .copyright {
+            flex-direction: row;
+            align-items: center;
+
+            img {
+                max-height: 25px;
+            }
+        }
+
+        .social {
+            display: flex;
+            justify-content: flex-end;
+        }
+    }
+}

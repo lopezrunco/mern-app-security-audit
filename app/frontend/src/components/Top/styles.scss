@@ -1,0 +1,72 @@
+@import '../../Variables.scss';
+
+.top {
+    padding: 1rem;
+    background: $primary-color;
+    background: $primary-gradient;
+    color: $light-color;
+
+    i {
+        font-size: .8rem;
+    }
+
+    .container {
+        .row {
+            .content-wrapper {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 1rem;
+
+                .user-info {
+                    small {
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                        gap: .5rem;
+                        color: $accent-color;
+                    }
+                }
+
+                .user-links {
+                    display: flex;
+                    gap: 2rem;
+
+                    .top-date {
+                        color: $accent-color;
+                        opacity: .95;
+                    }
+
+                    a {
+                        width: max-content;
+                        color: $light-color;
+                        display: flex;
+                        align-items: center;
+                        gap: .5rem;
+
+                        &:hover {
+                            color: $accent-color;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@media screen and (min-width: 992px) {
+    .top {
+        .container {
+            .row {
+                .content-wrapper {
+                    flex-direction: row;
+                    justify-content: space-between;
+
+                    .user-info {
+                        justify-content: flex-start;
+                    }
+                }
+            }
+        }
+    }
+}

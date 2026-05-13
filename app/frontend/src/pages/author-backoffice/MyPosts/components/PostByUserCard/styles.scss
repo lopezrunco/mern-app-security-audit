@@ -1,0 +1,18 @@
+@import '../../../../../Variables.scss';
+
+.my-post-card {
+    border-radius: $sm-border-radius;
+    overflow: hidden;
+    border: 1px solid $medium-light-color;
+    margin-bottom: 1.5rem;
+
+    img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .content {
+        padding: 2rem;
+    }
+}

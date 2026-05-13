@@ -1,0 +1,46 @@
+@import "../../../Variables.scss";
+
+.login-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: .5rem;
+    width: 30%;
+    margin: 0 auto;
+
+    label {
+        width: 100%;
+        font-size: 0.7rem;
+
+        input {
+            width: 100%;
+            border: none;
+            background: none;
+            border-bottom: 1px solid $dark-color;
+            outline: none;
+            padding: 0.5rem 0;
+            font-size: 1rem;
+        }
+    }
+}
+
+.links {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    font-weight: 700;
+    margin-top: 1rem;
+
+    a {
+        color: $primary-color;
+    }
+}
+
+@media screen and (max-width: 900px) {
+    .login-container {
+        width: 100%;
+    }
+}

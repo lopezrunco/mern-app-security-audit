@@ -1,0 +1,47 @@
+@import '../../../Variables.scss';
+
+.post-by-id {
+    .post-wapper {
+        margin-bottom: 3rem;
+        border-radius: $sm-border-radius;
+        box-shadow: $box-shadow;
+        overflow: hidden;
+
+        .content-wrapper {
+            padding: 2rem;
+
+            h6 {
+                margin-bottom: 1rem;
+            }
+
+            .details {
+                margin-bottom: 2rem;
+                color: $primary-color;
+                display: flex;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: .5rem;
+
+                small {
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    gap: 1rem;
+                }
+            }
+        }
+    }
+}
+
+@media screen and (min-width: 992px) {
+    .post-by-id {
+        .post-wapper {
+            .content-wrapper {
+                .details {
+                    flex-direction: row;
+                    gap: 2rem;
+                }
+            }
+        }
+    }
+}

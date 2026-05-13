@@ -1,0 +1,17 @@
+.text-banner {
+    text-align: center;
+    padding-bottom: 2rem;
+    display: none;
+
+    h2 {
+        font-weight: 900;
+        opacity: .5;
+        font-size: 10rem;
+    }
+}
+
+@media screen and (min-width: 992px) {
+    .text-banner {
+        display: block;
+    }
+}
