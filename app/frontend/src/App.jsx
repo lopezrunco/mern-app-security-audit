@@ -3,7 +3,7 @@ import { Routes, Route, BrowserRouter } from "react-router-dom";
 import { createContext, useEffect, useReducer } from "react";
 
 import {
-  // ENABLE_MFA,
+  ENABLE_MFA,
   HIDE_LOADER,
   LOGIN,
   LOGGING_OUT,
@@ -21,7 +21,7 @@ import LotById from "./pages/events/LotById";
 import MyPreOffers from "./pages/events/MyPreOffers";
 
 import Login from "./pages/security/Login";
-// import Register from "./pages/security/Register";
+import Register from "./pages/security/Register";
 import UserCreated from "./pages/security/UserCreated";
 import { NotFound } from "./pages/access/NotFound";
 import UpdateUserInfo from "./pages/security/UpdateUserInfo";
@@ -135,20 +135,20 @@ const reducer = (state, action) => {
         showingLoader: false,
       };
 
-    // case ENABLE_MFA:
-    //   // Basically, clones actual user and enables MFA
-    //   const user = {
-    //     ...state.user,
-    //     mfaEnabled: true,
-    //   };
+    case ENABLE_MFA:
+      // Basically, clones actual user and enables MFA
+      const user = {
+        ...state.user,
+        mfaEnabled: true,
+      };
 
-    //   // Save in local storage to disable MFA enable button
-    //   localStorage.setItem("user", JSON.stringify(user));
+      // Save in local storage to disable MFA enable button
+      localStorage.setItem("user", JSON.stringify(user));
 
-    //   return {
-    //     ...state,
-    //     user,
-    //   };
+      return {
+        ...state,
+        user,
+      };
 
     case SHOW_LOADER:
       return {
@@ -445,7 +445,7 @@ function App() {
             <Route path="/contacto" element={<Contacto />} />
             <Route path="/servicios" element={<Servicios />} />
             <Route path="/login" element={<Login />} />
-            {/* <Route path="/register" element={<Register />} /> */}
+            <Route path="/register" element={<Register />} />
             <Route path="/user-created" element={<UserCreated />} />
             <Route path="/remates/:id" element={<EventById />} />
             <Route path="/cartelera" element={<EventsList />} />

@@ -38,7 +38,7 @@ export const Top = () => {
                   <small className="top-date">
                     <i className="far fa-calendar-alt me-2"></i> {getTodayES()}
                   </small>
-                  {/* <small>
+                  <small>
                     <a href="/login">
                       <i className="fas fa-user"></i> Iniciar sesión
                     </a>
@@ -47,7 +47,7 @@ export const Top = () => {
                     <a href="/register">
                       <i className="fa fa-sign-in-alt"></i>Registro
                     </a>
-                  </small> */}
+                  </small>
                 </React.Fragment>
               )}
             </div>
