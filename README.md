@@ -30,11 +30,11 @@ The goal of this project is to conduct a real-world application security (AppSec
   /backend    → Original backend (unchanged snapshot)
 
 /app
-  → Rebuilt or patched version of the application
+  → Patched version of the application
 
 /docs
   → Security findings, threat model, notes, and methodology
 
 /reports
-  → Final write-ups, vulnerability summaries, PoCs (if applicable)
+  → Final write-ups, vulnerability summaries, PoCs
 ```
