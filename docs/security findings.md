@@ -4,8 +4,8 @@
 
 - [x] 1 | `backend/.env` | Secrets, credentials, JWT key strength
 - [x] 2 | `frontend/.env` | Firebase keys, API URLs baked into frontend
-- [ ] 3 | `frontend/src/config.js` | Hardcoded config in source
-- [ ] 4 | `frontend/build/` or `dist/` | Secrets baked into production bundle
+- [x] 3 | `frontend/src/config.js` | Hardcoded config in source
+- [x] 4 | `frontend/build/` or `dist/` | Secrets baked into production bundle
 - [ ] 5 | `backend/package.json` → `npm audit` | Known CVE dependencies
 - [ ] 6 | `frontend/package.json` → `npm audit` | Known CVE dependencies
 - [ ] 7 | `firebase.json` + `.firebaserc` | Firebase misconfiguration
@@ -134,9 +134,9 @@ TLS termination in production was either handled by Heroku's built-in SSL (which
 
 **Severity: N/A - Positive control**
 
-**Location:** `backend/.env`, git history
+**Location:** `.gitignore`, `backend/.env`, `frontend/.env`, `frontend/src/config.js`, git history
 
-**Description:** The fact that all credentials are in environment variables rather than hardcoded in source files is worth mention as a positive control. The git history confirmed this - no credential string appeared in 80+ commits.
+**Description:** Credentials and API keys are consistently excluded from version control across the project. Both `.env` files and `config.js` (which contains hardcoded API keys) are explicitly listed in `.gitignore` across frontend and backend. Git history confirms no credential strings in any commits. This reflects deliberate secrets management discipline rather than accidental omission.
 
 <hr />
 
@@ -180,5 +180,66 @@ curl -X POST https://api.cloudinary.com/v1_1/<redacted>/image/upload \
 - Audit Cloudinary storage for any unexpected uploads since June 2023.
 
 **Status:** Upload preset disabled post-audit on May 14th, 2026.
+
+<hr />
+
+### Finding 9: Production API hostname disclosed in frontend source.
+
+**Severity: Low**
+
+**Location:** `frontend/.env`
+
+**Evidence:**
+
+- `VITE_API_URL`: Production API URL present in commented line (redacted)
+
+**Description:** The commented-out production API URL reveals the hosting 
+platform (Render) and the exact production API hostname. While commented out 
+in the `.env` file, this value is present in the repository and discloses 
+infrastructure details to anyone with access to the source code.
+
+**Impact:** Low in isolation. Combined with other findings, an attacker 
+performing reconnaissance on the application would immediately know the 
+production API endpoint without needing to discover it through scanning.
+
+**Recommendation:** Use placeholder values in committed configuration 
+files rather than real hostnames, even in comments.
+
+<hr />
+
+### Finding 10: API key hardcoded in source file and exposed in production bundle.
+
+**Severity: Medium**
+
+**Location:** `frontend/src/config.js`, `frontend/src/components/Weather/index.jsx`
+
+**Description:** The OpenWeather API key is hardcoded directly in `frontend/src/config.js` and imported by the Weather component. Unlike `.env` variables which are managed through environment configuration, this value is committed or at risk of being committed as source code. The file is gitignored, but the import chain confirms the key was compiled into every production bundle and deployed to Firebase, where it was readable by anyone who inspected the JavaScript source.
+
+**Evidence:**
+
+- `frontend/src/config.js`: Contains `OPENWEATHER_API_KEY` (redacted)
+
+- `frontend/src/components/Weather/index.jsx` line 3: 
+  `import { OPENWEATHER_API_KEY } from "../../config"`
+
+- Key confirmed active in OpenWeather dashboard at time of audit.
+
+**Impact:**
+
+- Any visitor to the production site could extract the API key from the compiled JavaScript bundle using browser devtools.
+
+- Unauthorized use of the key could exhaust the free tier quota, breaking weather functionality for legitimate users.
+
+- Key has been active and unrotated since at least 2023.
+
+**Recommendation:**
+
+- Move API calls that require keys to the backend. The frontend requests weather data from your own API, which then calls OpenWeather server-side. The key never reaches the client.
+
+- Rotate the OpenWeather API key immediately.
+
+- Never hardcode API keys in frontend source files regardless of gitignore status. Use environment variables and treat all frontend values as public.
+
+**Status:** Key deactivated post-audit on May 14th, 2026.
 
 <hr />
