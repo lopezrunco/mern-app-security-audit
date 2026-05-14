@@ -38,3 +38,17 @@ The goal of this project is to conduct a real-world application security (AppSec
 /reports
   → Final write-ups, vulnerability summaries, PoCs
 ```
+
+## Workflow
+
+For this project I will follow this AppSec workflow:
+
+- [] **Phase 1: Audit:** Find and document without touching the code.
+
+- [] **Phase 2: Threat model & report:** Write up all the findings (`/reports`) prioritizing by severity. 
+
+- [] **Phase 3: Remediation:** Work in `/app` fixing the findings and comuenting the changes. 
+
+- [] **Phase 4: Retest:** Go back through the findings list and verify each fix actually closes the vulnerability. Re-run the PoCs against the patched version.  
+
+- [] **Phase 5: Remediation report:** Document what was fixed, how, and the retest results. This will be the closing artifact. 

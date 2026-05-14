@@ -1,29 +1,34 @@
 # Security findings
 
-## Finding 1: MFA disabled at Frontend reducer.
+## Audit priority
+
+- [ ] 1 | `backend/.env` | Secrets, credentials, JWT key strength
+- [ ] 2 | `frontend/.env` | Firebase keys, API URLs baked into frontend
+- [ ] 3 | `frontend/src/config.js` | Hardcoded config in source
+- [ ] 4 | `frontend/build/` or `dist/` | Secrets baked into production bundle
+- [ ] 5 | `backend/package.json` → `npm audit` | Known CVE dependencies
+- [ ] 6 | `frontend/package.json` → `npm audit` | Known CVE dependencies
+- [ ] 7 | `firebase.json` + `.firebaserc` | Firebase misconfiguration
+- [ ] 8 | `backend/src/api.js` | CORS, global middleware, security headers
+- [ ] 9 | `backend/src/routes/` | Full endpoint inventory
+- [ ] 10 | `backend/src/middlewares/` | Auth guards
+- [ ] 11 | `backend/src/validators/` | Input validation coverage
+- [ ] 12 | `backend/src/models/` | Schema, mass assignment
+- [ ] 13 | `backend/src/controllers/` | Business logic
+- [ ] 14 | `frontend/src/App.jsx` | Route structure, auth guards client-side
+- [ ] 15 | `frontend/src/pages/` | Sensitive data handling, localStorage abuse
+- [ ] 16 | `frontend/src/components/` | XSS surface, `dangerouslySetInnerHTML`
+- [ ] 17 | `frontend/src/utils/` | Crypto helpers, token handling
+- [ ] 18 | `backend/src/utils/`, `commands/` | Hardcoded secrets, insecure helpers
+
+## Findings:
+
+### Finding 1: Description.
 
 **Severity: High**
 
-**Description:** The `ENABLE_MFA` reducer is present in the codebase but the MFA enforcement logic is commented out throughout the application flow, suggesting MFA was deprioritized during development and never enforced at the backend level.
+**Description:** Description.
 
-**Impact:** If MFA is only toggled via frontend state flag (`localStorage`), an attacker can bypass it entirely by manipulating `localStorage` directly in the browser console (`localStorage.setItem("user", JSON.stringify({...user, mfaEnabled: false}))`) or by intercepting and modifying API responses. MFA enforced only on the client is effectively no MFA.
+**Impact:** Impact.
 
-**Recommendation:** MFA must be validated server-side on every authenticated request or at session creation time. The backend should refuse to issue a session token unless the MFA challenge has been conpleted and verified independently of any client-supplied flag.
-
-## Finding 2: Registration endpoint exposed despite Frontend suppression.
-
-**Severity: High**
-
-**Description:** The `/register` route and its associated UI elements are commented out in the React frontend, suggesting an intent to restrict registration. However, the underlying backend endpoint remains active.
-
-**Impact:** Any actor who discovers the endpoint (via directory brute-forcing, JS bundle analysis or source code review) can register accounts without restriction. This completely bypasses the intended access control.
-
-**Recommendation:** Registration should be controlled at the API layer, either by disabling the route entirely in Express, adding an invite/admin-only gate or enforcing rate limiting and CAPTCHA. 
-
-**Evidence:**
-
-![Register endpoint exposed](./screenshots/register%20endpoint%20exposed.jpg)
-
-The screenshot shows a HTTP request in Insomnia to the register endpoint.
-The account was created with no authentication, no email verification, no CAPTCHA, no rate limiting.
-The frontend supression is entirely ineffective.
+**Recommendation:** Recommendation.
