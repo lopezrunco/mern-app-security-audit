@@ -3,7 +3,7 @@
 ## Audit priority
 
 - [x] 1 | `backend/.env` | Secrets, credentials, JWT key strength
-- [ ] 2 | `frontend/.env` | Firebase keys, API URLs baked into frontend
+- [x] 2 | `frontend/.env` | Firebase keys, API URLs baked into frontend
 - [ ] 3 | `frontend/src/config.js` | Hardcoded config in source
 - [ ] 4 | `frontend/build/` or `dist/` | Secrets baked into production bundle
 - [ ] 5 | `backend/package.json` → `npm audit` | Known CVE dependencies
@@ -27,7 +27,7 @@
 
 **Severity: Low / Informational**
 
-**Location:** `backend/.gitignore`, `backend/.env`
+**Location:** `backend/.gitignore`, `backend/.env`, `frontend/.gitignore`, `frontend/.env`
 
 **Description:** Despite the repository being public on Github since 2023, the `.env` file containing production credentials was never committed to version control. Git history search confirms no credential strings appear in any of the 80+ commits. The `.gitignore` correctly excluded `.env` throughout the project lifecycle.
 
@@ -140,3 +140,45 @@ TLS termination in production was either handled by Heroku's built-in SSL (which
 
 <hr />
 
+### Finding 8: Cloudinary unsigned upload preset exposed via public JS bundle.
+
+**Severity: High**
+
+**Location:** `frontend/.env`, `frontend/dist/`, `frontend/build/`, Cloudinary dashboard
+
+**Description:** The frontend uses Vite, which bakes all `VITE_` prefixed environment variables into the compiled JavaScript bundle at build time. The Cloudinary cloud name `VITE_CLOUDINARY_ID` was therefore publicly readable in the production bundle by anyone who visited the site or inspected the JS files.
+
+Independently, the Cloudinary account has an unsigned upload preset active since June 2023, configured with public access mode. Unsigned presets require no authentication or API secret - only the cloud name and preset name are needed to upload files.
+
+**Evidence:** 
+
+- `VITE_CLOUDINARY_ID`: Cloud name present in `frontend/.env` and baked into production bundle at build time.
+
+- Cloudinary dashboard: Upload preset unsigned, Access mode: Public, Created: Jun 22, 2023, Status: Active.
+
+**Attack scenario:**
+
+Any actor who visited the production site could extract the cloud name from the public JS bundle and use it with the known unsigned preset to upload arbitrary files to the account with no authentication.
+
+```bash
+curl -X POST https://api.cloudinary.com/v1_1/<redacted>/image/upload \
+  -F "file=@any_file.jpg" \
+  -F "upload_preset=<redacted>"
+```
+
+**Impact:** 
+
+- Unauthorized file uploads to the Cloudinary account.
+- Storage quota exhaustion.
+- Hosting of malicious or illegal content on the application's media domain.
+- No authentication log: The uploads would appear legitimate in Cloudinary's dashboard.
+
+**Recommendation:**
+
+- Disable or delete the unsigned upload preset immediately.
+- For future projects, use signed uploads with a backend-generated signature (the API secret never leaves the server).
+- Audit Cloudinary storage for any unexpected uploads since June 2023.
+
+**Status:** Upload preset disabled post-audit on May 14th, 2026.
+
+<hr />
