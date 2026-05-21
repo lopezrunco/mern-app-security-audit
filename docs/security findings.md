@@ -6,7 +6,7 @@
 - [x] 2 | `frontend/.env` | Firebase keys, API URLs baked into frontend
 - [x] 3 | `frontend/src/config.js` | Hardcoded config in source
 - [x] 4 | `frontend/build/` or `dist/` | Secrets baked into production bundle
-- [ ] 5 | `backend/package.json` → `npm audit` | Known CVE dependencies
+- [x] 5 | `backend/package.json` → `npm audit` | Known CVE dependencies
 - [ ] 6 | `frontend/package.json` → `npm audit` | Known CVE dependencies
 - [ ] 7 | `firebase.json` + `.firebaserc` | Firebase misconfiguration
 - [ ] 8 | `backend/src/api.js` | CORS, global middleware, security headers
@@ -243,3 +243,41 @@ files rather than real hostnames, even in comments.
 **Status:** Key deactivated post-audit on May 14th, 2026.
 
 <hr />
+
+### Finding 11: Multiple high and critical severity vulnerabilities in production dependencies
+
+**Severity: High**
+
+**Location:** `backend/package.json`
+
+**Description:** Running `npm audit` against the backend reveals 63 vulnerabilities across production and development dependencies. Filtering to production dependencies with direct application impact surfaces the following critical issues:
+
+**Critical:**
+
+- `form-data` (`GHSA-fjxv-7rqg-78g4`): Uses iunsafe random function for multipart boundary generation, potentially allowing boundary prediction attacks on file upload endpoints.
+
+**High:**
+
+- `jsonwebtoken  <=8.5.1` (`GHSA-qwph-4952-7xr6`, `GHSA-hjrf-2m68-5959`, `GHSA-8cf7-32gw-wr33`): Three CVEs affecting the JWT library used for all authentication in this application. Vulnerabilities include signature validation bypass via insecure default algorithm and token forgery via `RSA/HMAC` alorithm confusion. This compounds Finding 2 (weak HWT secret0).
+
+- `express  <=4.21.2` (Multiple CVEs): The core web framework depends on vulnerable version of `body-parser` (DoS via URL encoding), `path-to-regexp` (ReDoS via route parameters) and `qs` (DoS via array parsing). All POST endpoints and route handlers are affected.
+
+- `bcrypt  5.0.1 - 5.1.1` (GHSA-34x7-hfp2-rc4v via tar): The password hashing library depends on a vulnerable version of `tar` via `@mapbox/node-pre-gyp`. Exploitability requires local build context but affects the integrity of the dependency chain.
+
+**Evidence:**
+
+```sh
+npm audit
+63 vulnerabilities (23 low, 6 moderate, 32 high, 2 critical)
+```
+
+**Impact:** The `jsonwebtoken` vulnerabilities are the most severe in context. An attacker could potentially bypass JWT signature validation or forge tokens, achieving authentication bypass without knowing the JWT secret. The Express vulnerabilities expose all API endpoints to denial of service attacks.
+
+**Recommendation:**
+- Run `npm audit fix` inmediately for non-breaking fixes.
+- Update `jsonwebtoekn` to `>=9.0.0` (Note this is a breaking change requiring code review of all JWT verification calls).
+- Update `express` to `>=4.21.3`
+- Schedule regular `npm audit` runs as part of the CI/CD pipeline
+- Consider adding `npm audit --audit-level-high` as a build gate that fails the pipeline on High or Critical findings.
+
+
