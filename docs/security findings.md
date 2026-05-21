@@ -7,8 +7,8 @@
 - [x] 3 | `frontend/src/config.js` | Hardcoded config in source
 - [x] 4 | `frontend/build/` or `dist/` | Secrets baked into production bundle
 - [x] 5 | `backend/package.json` → `npm audit` | Known CVE dependencies
-- [ ] 6 | `frontend/package.json` → `npm audit` | Known CVE dependencies
-- [ ] 7 | `firebase.json` + `.firebaserc` | Firebase misconfiguration
+- [x] 6 | `frontend/package.json` → `npm audit` | Known CVE dependencies
+- [x] 7 | `firebase.json` + `.firebaserc` | Firebase misconfiguration
 - [ ] 8 | `backend/src/api.js` | CORS, global middleware, security headers
 - [ ] 9 | `backend/src/routes/` | Full endpoint inventory
 - [ ] 10 | `backend/src/middlewares/` | Auth guards
@@ -248,9 +248,11 @@ files rather than real hostnames, even in comments.
 
 **Severity: High**
 
-**Location:** `backend/package.json`
+**Location:** `backend/package.json`, `frontend/package.json`
 
-**Description:** Running `npm audit` against the backend reveals 63 vulnerabilities across production and development dependencies. Filtering to production dependencies with direct application impact surfaces the following critical issues:
+**Description:** Running `npm audit` against both backend and frontend reveals a cobined 101 vulnerabilities. Filtering to production dependencies with direct application impact surfaces the following critical issues:
+
+#### Backend
 
 **Critical:**
 
@@ -264,20 +266,80 @@ files rather than real hostnames, even in comments.
 
 - `bcrypt  5.0.1 - 5.1.1` (GHSA-34x7-hfp2-rc4v via tar): The password hashing library depends on a vulnerable version of `tar` via `@mapbox/node-pre-gyp`. Exploitability requires local build context but affects the integrity of the dependency chain.
 
+#### Frontend
+
+**Critical:**
+
+- `vm2 <=3.11.2` (20 CVEs including sandbox escape): Transitive dependency introduced via `cloudinary@1.37.2` dependency chain `cloudinary → proxy-agent → pac-proxy-agent → pac-resolver → degenerator → vm2`. Root cause is outdated Cloudinary SDK. Fix available by upgrading to `cloudinary@2.10.0`.
+- `form-data` (GHSA-fjxv-7rqg-78g4): Same as backend.
+
+**High:**
+- `axios  1.0.0 - 1.15.1` (20 CVEs): HTTP client used for all API communication. CVEs include CSRF, SSRF, prototype pollution, credential leakage and request hijacking. All frontend-to-backend requests affected.
+- `dompurify  <=3.3.3` (multiple XSS bypass CVEs): HTML sanitization library with multiple XSS bypass vulnerabilities. Presence of DOMPurify confirms user-generated HTML is rendered somewhere in the app, which means an active XSS surface requiring investigation.
+- `react-draft-wysiwyg`: Rich text editor depending on vulnerable `immutable` via `draft-js`. No fix available for underlying vulnerability. Rich text editors are a classic XSS vector.
+
 **Evidence:**
 
 ```sh
+# Backend
 npm audit
 63 vulnerabilities (23 low, 6 moderate, 32 high, 2 critical)
 ```
 
-**Impact:** The `jsonwebtoken` vulnerabilities are the most severe in context. An attacker could potentially bypass JWT signature validation or forge tokens, achieving authentication bypass without knowing the JWT secret. The Express vulnerabilities expose all API endpoints to denial of service attacks.
+```sh
+# Frontend
+npm audit
+38 vulnerabilities (4 low, 12 moderate, 20 high, 2 critical)
+```
+
+**Combined:** 101 vulnerabilities.
+
+**Impact:** The `jsonwebtoken` vulnerabilities are most severe in context. Potential authentication bypass without knowing the JWT secret. The `axios` vulnerabilities affect every API call made by the frontend. The `vm2` critical chain, while transitive, represents a significant supply chain risk introduced by a single outdated direct dependency.
 
 **Recommendation:**
-- Run `npm audit fix` inmediately for non-breaking fixes.
+- Run `npm audit fix` for non-breaking fixes in both projects.
 - Update `jsonwebtoekn` to `>=9.0.0` (Note this is a breaking change requiring code review of all JWT verification calls).
 - Update `express` to `>=4.21.3`
+- Update `axios` to `>=1.15.2`.
+- Update `cloudinary` to `>=2.10.0` (Breaking change. Resolves entire vm2 chain).
 - Schedule regular `npm audit` runs as part of the CI/CD pipeline
 - Consider adding `npm audit --audit-level-high` as a build gate that fails the pipeline on High or Critical findings.
 
+**Note:** The `dompurify` and `react-draft-wysiwyg` findings indicate an active XSS surface that will be investigated further in items 15 and 16 of the auit checklist.
 
+### Finding 12: No HTTP security headers configured in Firebase Hosting.
+
+**Severity: Medium**
+
+**Location:** `frontend/firebase.json`
+
+**Description:** The Firebase Hosting configuration does not define any HTTP security headers. Firebase supports custom response headers via the `headers` key in `firebase.json`, but none are configured. As a result the production frontend was served without standard security headers during its entire active lifetime.
+
+**Missing headers and their impact:**
+
+- `Content-Security-Policy` absence allows unrestricted script execution, significantly increasing XSS impact.
+- `X-Frame-Options` or `frame-ancestors` CSP directive. Their absence allows the application to be embedded in iframes, enabling clickjacking attacks.
+- `X-Content-Type-Options: nosniff` absence allows browsers to MIME-sniff responses, potentially executing uploaded content as scripts.
+- `Strict-Transport-Security` absence means HTTPS is not enforced at the browser level for returning visitors.
+- `Referrer-Policy` absence means full URLs including tokens may leak in Referer headers to third-party resources.
+
+**Recommendation:** Add a `headers` block to `firebase.json`:
+
+```json
+"headers": [
+  {
+    "source": "**",
+    "headers": [
+      { "key": "X-Content-Type-Options", "value": "nosniff" },
+      { "key": "X-Frame-Options", "value": "DENY" },
+      { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+      { "key": "Strict-Transport-Security", 
+        "value": "max-age=31536000; includeSubDomains" },
+      { "key": "Content-Security-Policy", 
+        "value": "default-src 'self'; script-src 'self'" }
+    ]
+  }
+]
+```
+
+**Note:** CSP configuration requires careful tuning to avoid breaking legitimate functionality. Start with report-only mode using `Content-Security-Policy-Report-Only`.
