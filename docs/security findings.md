@@ -437,3 +437,100 @@ app.use(rateLimit({
     max: 100
 }))
 ```
+
+### Finding 14: Complete authorization bypass via client-controlled role header | Broken access control.
+
+**Severity: Critical**
+
+**Location:** `backend/src/middlewares/check-user-role.js`, `backend/src/routes/users.js`
+
+**Sources:**
+- [OWASP Top 10 A01:2021 — Broken Access Control](https://owasp.org/Top10/A01_2021-Broken_Access_Control/)
+- [CWE-639: Authorization Bypass Through User-Controlled Key](https://cwe.mitre.org/data/definitions/639.html)
+- [OWASP Authorization Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html)
+
+**Description:** The `checkUserRole` middleware, which protects all admin-level endpoints, determines the user's role by reading a client-supplied HTTP header named `userrole` rather than verifying the role server-side against the database or a trusted JWT claim.
+
+```js
+// check-user-role.js
+const userRole = request.headers['userrole'] // Trusts client input.
+if (userRole) {
+  const roleMatches = roles.find(role => role === userRole)
+  if (roleMatches) {
+      next() // Grants access based on attacker-controlled value.
+  }
+}
+```
+
+Any authenticated user can bypass all role checks by adding a singles HTTP header to their requests. The role-based access control system provides zero security protection.
+
+**Evidence: PoC confirmed during audit:**
+
+- Step 1: Register attacker account (BASIC role):
+  ```json
+  POST /register
+  {
+    "nickname": "Attacker",
+    "email": "attacker@attacker.com.uy",
+    "password": "supersecret"
+  }
+  => 200 OK, role: "BASIC"
+  ```
+
+- Step 2: Access admin user list with role bypass header:
+  ```json
+  GET /admin/users
+  Authorization: Bearer <attacker_token>
+  userrole: ADMIN
+  => 200 OK (Full user list returned including emails phone numbers, addresses of all users)
+  ```
+
+- Step 3: Delete any user with role bypass header:
+  ```json
+  DELETE /admin/users/<target_id>
+  Authorization: Bearer <attacker_token>
+  userrole: ADMIN
+  => 200 OK (User deleted successfully)
+  ```
+
+**Impact:**
+Any authenticated user (including self-registered accounts with no vetting) can instantly escalate to ADMIN privileges by adding a single HTTP header. This enables:
+
+- Full read access to all user PII (emails, phone numbers, addresses).
+- Deletion of any user account including administrator.
+- Access to all other admin-protected endpoints across the entire API.
+- Complete compromise of the application's access control model.
+
+This vulnerability renders the entire RBAC implementation ineffective. Every endpoint protected by `checkUserRole()` across all route files must be considered unprotected.
+
+**Root cause:** Role was validated against a client-supplied header rather than a server-side trusted source. Authorization decisions must never be based on client-controlled input.
+
+**Recommendation:**
+Roles must be verified server-side on every request. The correct approach is to look up the user's role from the database using the verified JWT identity:
+
+```js
+module.exports = (roles) => {
+  return async (request, response, next) => {
+    try {
+      const user = await userModel.findById(request.user.id)
+      if (!user) return response.status(401).json({ 
+        message: 'Unauthorized' 
+      })
+      if (!roles.includes(user.role)) {
+        return response.status(403).json({ 
+          message: 'Forbidden access' 
+        })
+      }
+      next()
+    } catch (error) {
+      return response.status(500).json({ 
+        message: 'Internal server error' 
+      })
+    }
+  }
+}
+```
+
+**Status:** Vulnerability confirmed via live PoC on May 2026.
+App deprecated. No active users at risk.
+
