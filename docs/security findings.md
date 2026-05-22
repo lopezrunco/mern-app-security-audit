@@ -45,6 +45,8 @@ The `.env` file exists locally with credentials that have been unrotated since 2
 
 **Location:** `backend/.env`, `backend/src/utils/create-token.js`
 
+**Source:** [OWASP Cheat Sheet Series](https://cheatsheetseries.owasp.org/cheatsheets/JSON_Web_Token_for_Java_Cheat_Sheet.html#secret-key)
+
 **Description:** The JWT secret is 88 characters of mixed alphanumeric and has two issues:
 
 - It appears manually typed rather than cryptographically generated. A proper secret should come from `crypto.randomBytes(64).toString('hex')` which produces 128 hex characters with guaranteed entropy.
@@ -83,6 +85,10 @@ TLS termination in production was either handled by Heroku's built-in SSL (which
 
 **Location:** `backend/.env`
 
+**Sources:**
+- [OWASP Authentication Cheat Sheet — Passwords](https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html#implement-proper-password-strength-controls)
+- [CWE-521: Weak Password Requirements](https://cwe.mitre.org/data/definitions/521.html)
+
 **Description:** The MongoDB Atlas connection is configured with a weak dictionary-phrase password containing no special characters and no verified entropy. Credentials have been unrotated since July 2023 (approximately 3 years).
 
 **Evidence:**
@@ -118,6 +124,8 @@ TLS termination in production was either handled by Heroku's built-in SSL (which
 
 **Recommendation:** In future projects, restrict Atlas network access to specific server IPs only. For dynamic infrastructure, use VPC peering or Atlas Private Endpoints rather than allowlisting `0.0.0.0/0`.
 
+**Source:** (Configure IP Access List Entries in MongoDB)[https://www.mongodb.com/docs/atlas/security/ip-access-list/?interface-default-atlas-cli=atlas-cli]
+
 <hr />
 
 ### Finding 6: Default MongoDB port.
@@ -145,6 +153,8 @@ TLS termination in production was either handled by Heroku's built-in SSL (which
 **Severity: High**
 
 **Location:** `frontend/.env`, `frontend/dist/`, `frontend/build/`, Cloudinary dashboard
+
+**Source:** [Managing upload presets in Cloudinary](https://cloudinary.com/documentation/upload_presets)
 
 **Description:** The frontend uses Vite, which bakes all `VITE_` prefixed environment variables into the compiled JavaScript bundle at build time. The Cloudinary cloud name `VITE_CLOUDINARY_ID` was therefore publicly readable in the production bundle by anyone who visited the site or inspected the JS files.
 
@@ -213,6 +223,8 @@ files rather than real hostnames, even in comments.
 
 **Location:** `frontend/src/config.js`, `frontend/src/components/Weather/index.jsx`
 
+**Source:** [CWE-798: Use of Hard-coded Credentials](https://cwe.mitre.org/data/definitions/798.html)
+
 **Description:** The OpenWeather API key is hardcoded directly in `frontend/src/config.js` and imported by the Weather component. Unlike `.env` variables which are managed through environment configuration, this value is committed or at risk of being committed as source code. The file is gitignored, but the import chain confirms the key was compiled into every production bundle and deployed to Firebase, where it was readable by anyone who inspected the JavaScript source.
 
 **Evidence:**
@@ -250,17 +262,25 @@ files rather than real hostnames, even in comments.
 
 **Location:** `backend/package.json`, `frontend/package.json`
 
-**Description:** Running `npm audit` against both backend and frontend reveals a cobined 101 vulnerabilities. Filtering to production dependencies with direct application impact surfaces the following critical issues:
+**Sources:**
+- [GHSA-fjxv-7rqg-78g4 — form-data](https://github.com/advisories/GHSA-fjxv-7rqg-78g4)
+- [GHSA-qwph-4952-7xr6 — jsonwebtoken](https://github.com/advisories/GHSA-qwph-4952-7xr6)
+- [GHSA-hjrf-2m68-5959 — jsonwebtoken](https://github.com/advisories/GHSA-hjrf-2m68-5959)
+- [GHSA-8cf7-32gw-wr33 — jsonwebtoken](https://github.com/advisories/GHSA-8cf7-32gw-wr33)
+- [GHSA-wf5p-g6vw-rhxx — axios](https://github.com/advisories/GHSA-wf5p-g6vw-rhxx)
+- [GHSA-g644-9gfx-q4q4 — vm2](https://github.com/advisories/GHSA-g644-9gfx-q4q4)
+
+**Description:** Running `npm audit` against both backend and frontend reveals a combined 101 vulnerabilities. Filtering to production dependencies with direct application impact surfaces the following critical issues:
 
 #### Backend
 
 **Critical:**
 
-- `form-data` (`GHSA-fjxv-7rqg-78g4`): Uses iunsafe random function for multipart boundary generation, potentially allowing boundary prediction attacks on file upload endpoints.
+- `form-data` (`GHSA-fjxv-7rqg-78g4`): Uses unsafe random function for multipart boundary generation, potentially allowing boundary prediction attacks on file upload endpoints.
 
 **High:**
 
-- `jsonwebtoken  <=8.5.1` (`GHSA-qwph-4952-7xr6`, `GHSA-hjrf-2m68-5959`, `GHSA-8cf7-32gw-wr33`): Three CVEs affecting the JWT library used for all authentication in this application. Vulnerabilities include signature validation bypass via insecure default algorithm and token forgery via `RSA/HMAC` alorithm confusion. This compounds Finding 2 (weak HWT secret0).
+- `jsonwebtoken  <=8.5.1` (`GHSA-qwph-4952-7xr6`, `GHSA-hjrf-2m68-5959`, `GHSA-8cf7-32gw-wr33`): Three CVEs affecting the JWT library used for all authentication in this application. Vulnerabilities include signature validation bypass via insecure default algorithm and token forgery via `RSA/HMAC` algorithm confusion. This compounds Finding 2 (weak JWT secret).
 
 - `express  <=4.21.2` (Multiple CVEs): The core web framework depends on vulnerable version of `body-parser` (DoS via URL encoding), `path-to-regexp` (ReDoS via route parameters) and `qs` (DoS via array parsing). All POST endpoints and route handlers are affected.
 
@@ -298,20 +318,22 @@ npm audit
 
 **Recommendation:**
 - Run `npm audit fix` for non-breaking fixes in both projects.
-- Update `jsonwebtoekn` to `>=9.0.0` (Note this is a breaking change requiring code review of all JWT verification calls).
+- Update `jsonwebtoken` to `>=9.0.0` (Note this is a breaking change requiring code review of all JWT verification calls).
 - Update `express` to `>=4.21.3`
 - Update `axios` to `>=1.15.2`.
 - Update `cloudinary` to `>=2.10.0` (Breaking change. Resolves entire vm2 chain).
 - Schedule regular `npm audit` runs as part of the CI/CD pipeline
-- Consider adding `npm audit --audit-level-high` as a build gate that fails the pipeline on High or Critical findings.
+- Consider adding `npm audit --audit-level=high` as a build gate that fails the pipeline on High or Critical findings.
 
-**Note:** The `dompurify` and `react-draft-wysiwyg` findings indicate an active XSS surface that will be investigated further in items 15 and 16 of the auit checklist.
+**Note:** The `dompurify` and `react-draft-wysiwyg` findings indicate an active XSS surface that will be investigated further in items 15 and 16 of the audit checklist.
 
 ### Finding 12: No HTTP security headers configured in Firebase Hosting.
 
 **Severity: Medium**
 
 **Location:** `frontend/firebase.json`
+
+**Source:** [OWASP Secure Headers Project](https://owasp.org/www-project-secure-headers/)
 
 **Description:** The Firebase Hosting configuration does not define any HTTP security headers. Firebase supports custom response headers via the `headers` key in `firebase.json`, but none are configured. As a result the production frontend was served without standard security headers during its entire active lifetime.
 
