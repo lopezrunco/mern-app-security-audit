@@ -505,6 +505,18 @@ This vulnerability renders the entire RBAC implementation ineffective. Every end
 
 **Root cause:** Role was validated against a client-supplied header rather than a server-side trusted source. Authorization decisions must never be based on client-controlled input.
 
+**Full scope of bypass | Affected endpoints across all route files:**
+
+The `checkUserRole()` bypass affects 27 endpoints across 5 route files.
+Any authenticated user can perform the following actions by adding `userrole: ADMIN` to any request:
+
+- Read full PII of all registered users.
+- Delete any user, event, lot, preoffer, ad or post.
+- Create, update or delete any content across the entire applicartion.
+- Access all admin-only data views.
+
+This constitutes a complete collapse of the application's access control model. The RBAC implementation provides zero security value.
+
 **Recommendation:**
 Roles must be verified server-side on every request. The correct approach is to look up the user's role from the database using the verified JWT identity:
 
@@ -534,3 +546,6 @@ module.exports = (roles) => {
 **Status:** Vulnerability confirmed via live PoC on May 2026.
 App deprecated. No active users at risk.
 
+### Finding 15: Unauthenticated access to sensitive endpoint.
+
+The endpoint `router.post('/preoffers', getAllPreoffers)` that handles auction data containing potentially sensitive financial information. They're fully public with no authentication required.
