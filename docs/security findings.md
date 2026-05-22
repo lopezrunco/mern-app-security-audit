@@ -9,7 +9,7 @@
 - [x] 5 | `backend/package.json` → `npm audit` | Known CVE dependencies
 - [x] 6 | `frontend/package.json` → `npm audit` | Known CVE dependencies
 - [x] 7 | `firebase.json` + `.firebaserc` | Firebase misconfiguration
-- [ ] 8 | `backend/src/api.js` | CORS, global middleware, security headers
+- [x] 8 | `backend/src/api.js` | CORS, global middleware, security headers
 - [ ] 9 | `backend/src/routes/` | Full endpoint inventory
 - [ ] 10 | `backend/src/middlewares/` | Auth guards
 - [ ] 11 | `backend/src/validators/` | Input validation coverage
@@ -365,3 +365,75 @@ npm audit
 ```
 
 **Note:** CSP configuration requires careful tuning to avoid breaking legitimate functionality. Start with report-only mode using `Content-Security-Policy-Report-Only`.
+
+### Finding 13: Insecure Express configuration, missing security middleware and wildcard CORS.
+
+**Severity: High**
+
+**Location:** `backend/src/api.js`
+
+**Sources:**
+- [OWASP CORS Security Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/HTTP_Headers_Cheat_Sheet.html#cors)
+- [Express.js Security Best Practices](https://expressjs.com/en/advanced/best-practice-security.html)
+- [npm helmet](https://helmetjs.github.io/)
+
+**Description:** The Express app entry point configures several middleware with insecure defaults and omits critical security middleware entirely.
+
+**Issue 1: Wildcard CORS (High):**
+
+`cors()` is called with no configuration, resulting in `Access-Control-Allow-Origin: *`.
+
+Any domain can make cross-origin requests to the API. Combined with JWT-based authentication stored client-side, a malicious website could make authenticated API requests on behalf of any logged-in user who visits it.
+
+**Issue 2: No request body size limit (Medium):**
+
+```js
+app.use(express.json())
+```
+
+No `limit` option is configured. An attacker can send arbitrarily large JSON payloads, potentially causing memory exhaustation and DoS.
+
+**Issue 3: Missing security middleware (Medium):**
+
+The following standard security middleware is absent:
+- `helmet`: Sets HTTP security headers (X-Frame-Options, X-Content-Type-Options, etc.).
+- `express-rate-limit`: Prevents brute force and DoS attacks.
+- `hpp`: Prevents HTTP parameter poluttion attacks.
+
+**Issue 4: Raw error logging at application level (Low):**
+
+```js
+console.error('Could not connect to the database => ', error)
+```
+
+Raw error objects logged to console may expose database connection strings, host names and driver internals in server logs.
+
+**Evidence:**
+```js
+app.use(cors())              // no origin restriction
+app.use(express.json())      // no size limit
+app.use('/', routes)         // no rate limiting, no helmet
+```
+
+**Impact:**
+- Wildcard CORS enables cross-site request forgery style attacks from any malicious domain against authenticated users.
+- Unbounded request body enables memory exhaustation DoS.
+- Missing security headers leave the API response surface unprotected.
+
+**Recommendation:**
+```js
+const helmet = require('helmet')
+const rateLimit = require('express-rate-limit')
+
+app.use(helmet())
+app.use(cors({
+    origin: process.env.FRONTEND_URL,
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Authorization', 'Content-Type']
+}))
+app.use(express.json({ limit: '10kb' }))
+app.use(rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 100
+}))
+```
