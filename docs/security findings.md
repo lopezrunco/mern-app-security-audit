@@ -10,8 +10,8 @@
 - [x] 6 | `frontend/package.json` → `npm audit` | Known CVE dependencies
 - [x] 7 | `firebase.json` + `.firebaserc` | Firebase misconfiguration
 - [x] 8 | `backend/src/api.js` | CORS, global middleware, security headers
-- [ ] 9 | `backend/src/routes/` | Full endpoint inventory
-- [ ] 10 | `backend/src/middlewares/` | Auth guards
+- [x] 9 | `backend/src/routes/` | Full endpoint inventory
+- [x] 10 | `backend/src/middlewares/` | Auth guards
 - [ ] 11 | `backend/src/validators/` | Input validation coverage
 - [ ] 12 | `backend/src/models/` | Schema, mass assignment
 - [ ] 13 | `backend/src/controllers/` | Business logic
@@ -37,7 +37,7 @@ The repo is still public and contains full application source code, which reveal
 
 The `.env` file exists locally with credentials that have been unrotated since 2023. Standard hygiene would suggest rotating them regardless.
 
-<hr />
+---
 
 ### Finding 2: Weak JWT secret likely insufficient entropy, used without processing.
 
@@ -63,7 +63,7 @@ The `.env` file exists locally with credentials that have been unrotated since 2
 
 - Consider RS256 (asymmetric) instead of HS256: The private key signs, the public key verifies, so even if the verification key leaks, tokens can't be forged.
 
-<hr />
+---
 
 ### Finding 3: HTTP/HTTPS port configuration - Development vs production separation.
 
@@ -77,7 +77,7 @@ This is actually a correct practice: Production used port 443 (HTTPS) while loca
 
 TLS termination in production was either handled by Heroku's built-in SSL (which it provides automatically on all dynos) or a custom certificate. Since the app is deprecated this is hard to verify retroactively, but Heroku's default behaviour would have provided TLS, so this is likely a non-issue.
 
-<hr />
+---
 
 ### Finding 4: MongoDB weak password and unrotated credentials.
 
@@ -106,7 +106,7 @@ TLS termination in production was either handled by Heroku's built-in SSL (which
 
 - Use a secrets manager, like AWS Secrets Manager for credential storage in future projects rather than `.env` files.
 
-<hr />
+---
 
 ### Finding 5: MongoDB Atlas configured to allow connections from any IP address.
 
@@ -126,7 +126,7 @@ TLS termination in production was either handled by Heroku's built-in SSL (which
 
 **Source:** (Configure IP Access List Entries in MongoDB)[https://www.mongodb.com/docs/atlas/security/ip-access-list/?interface-default-atlas-cli=atlas-cli]
 
-<hr />
+---
 
 ### Finding 6: Default MongoDB port.
 
@@ -136,7 +136,7 @@ TLS termination in production was either handled by Heroku's built-in SSL (which
 
 **Description:** Default port in use means no port obfuscation. Not a control, but worth noting in the context of the Atlas exposure surface above.
 
-<hr />
+---
 
 ### Finding 7: Environment variable separation.
 
@@ -146,7 +146,7 @@ TLS termination in production was either handled by Heroku's built-in SSL (which
 
 **Description:** Credentials and API keys are consistently excluded from version control across the project. Both `.env` files and `config.js` (which contains hardcoded API keys) are explicitly listed in `.gitignore` across frontend and backend. Git history confirms no credential strings in any commits. This reflects deliberate secrets management discipline rather than accidental omission.
 
-<hr />
+---
 
 ### Finding 8: Cloudinary unsigned upload preset exposed via public JS bundle.
 
@@ -191,7 +191,7 @@ curl -X POST https://api.cloudinary.com/v1_1/<redacted>/image/upload \
 
 **Status:** Upload preset disabled post-audit on May 14th, 2026.
 
-<hr />
+---
 
 ### Finding 9: Production API hostname disclosed in frontend source.
 
@@ -215,7 +215,7 @@ production API endpoint without needing to discover it through scanning.
 **Recommendation:** Use placeholder values in committed configuration 
 files rather than real hostnames, even in comments.
 
-<hr />
+---
 
 ### Finding 10: API key hardcoded in source file and exposed in production bundle.
 
@@ -254,7 +254,7 @@ files rather than real hostnames, even in comments.
 
 **Status:** Key deactivated post-audit on May 14th, 2026.
 
-<hr />
+---
 
 ### Finding 11: Multiple high and critical severity vulnerabilities in production dependencies
 
@@ -327,6 +327,8 @@ npm audit
 
 **Note:** The `dompurify` and `react-draft-wysiwyg` findings indicate an active XSS surface that will be investigated further in items 15 and 16 of the audit checklist.
 
+---
+
 ### Finding 12: No HTTP security headers configured in Firebase Hosting.
 
 **Severity: Medium**
@@ -365,6 +367,8 @@ npm audit
 ```
 
 **Note:** CSP configuration requires careful tuning to avoid breaking legitimate functionality. Start with report-only mode using `Content-Security-Policy-Report-Only`.
+
+---
 
 ### Finding 13: Insecure Express configuration, missing security middleware and wildcard CORS.
 
@@ -437,6 +441,8 @@ app.use(rateLimit({
     max: 100
 }))
 ```
+
+---
 
 ### Finding 14: Complete authorization bypass via client-controlled role header | Broken access control.
 
@@ -546,6 +552,100 @@ module.exports = (roles) => {
 **Status:** Vulnerability confirmed via live PoC on May 2026.
 App deprecated. No active users at risk.
 
+---
+
 ### Finding 15: Unauthenticated access to sensitive endpoint.
 
 The endpoint `router.post('/preoffers', getAllPreoffers)` that handles auction data containing potentially sensitive financial information. They're fully public with no authentication required.
+
+---
+
+### Finding 16: Misrouted controller in `preforrers.js`.
+
+```js
+const getPostsByTag = require('../controllers/post/get-by-tag')
+```
+
+A post controller is imported in the preoffers route but never used. This is dead code that suggest copy-past errors during development.
+
+---
+
+### Finding 17: Authorization header sent without Bearer prefix.
+
+**Severity: Informational**
+
+**Location:** `backend/src/middlewares/check-user-credentials.js`, frontend HTTP client.
+
+**Description:** The client sends the JWT token in the Authorization header without the standard `Beared ` prefix. The middleware reads the header raw without stripping any prefix, which works correctly given the current client behavior.
+
+However this deviates from the RFC 7235 standard which defines the Authorization header format as `Beared <token>`. If a standars-compliant client or third integration sends the header with the `Bearer ` prefix, authentication will fail silently.
+
+**Evidence:**
+```sh
+Authorization: eyJhbGci...  <= no "Bearer " prefix
+```
+
+**Recommendation:** Standarize to RFC 7235 format on both client and server:
+
+- Server: extract token with `request.headers.authorization?.split(' ')[1]`
+- Client: send header as `Authorization: Bearer <token>`
+
+---
+
+### Finding 18: Role claim missing from JWT (`request.user.role` always undefined).
+
+**Severity: High**
+
+**Location:** `backend/src/middlewares/check-user-credentials.js`, `backend/src/utils/create-token.js`
+
+**Sources:**
+- [RFC 7519 §4 — JWT Claims](https://www.rfc-editor.org/rfc/rfc7519#section-4)
+- [CWE-285: Improper Authorization](https://cwe.mitre.org/data/definitions/285.html)
+- [OWASP Authorization Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html#centralize-your-authorization-logic)
+
+**Description:** The middleware inserts `decoded.role` into `request.user`, but `create-token.js` never encodes a `role` claim in the JWT payload. As a result `request.user.role` is always `undefined` throughout the entire app.
+
+This compounds Finding 14: Even a corrected `checkUserRole` middleware that read from `request.user.role` instead of the client-supplied header would still fail, because the role is never available from the token.
+
+**Evidence:**
+```js
+// create-token.js: Role never encoded.
+return jwt.sign({
+  id: user.id,
+  name: user.name,
+  email: user.email,
+  type: tokenType // No role claim
+}, process.env.JWT_KEY, { expiresIn })
+
+// check-user-credentials.js: Role always undefined.
+request.user = {
+  id: decoded.id,
+  name: decoded.name,
+  email: decoded.email,
+  role: decoded.role // Always undefined.
+}
+```
+
+**Recommendation:** Either encode the role in the JWT at token creation time or look up user's role from the database in the middleware using the verified `id` claim.
+
+---
+
+### Finding 19: Systemic raw error logging pattern.
+
+**Severity: Low**
+
+**Location:** Multiple files throughout the codebase.
+
+**Description:** Raw `console.error(error)` calls appear throughout the app including `api.js`, `check-user-credentials.js` and multiple controllers. This pattern exposes internal error details, stack traces and library internals in server logs.
+
+**Evidence:**
+```js
+console.error('Token error =>', error)         // check-user-credentials.js
+console.error('Could not connect =>', error)   // api.js
+console.error('Error trying to enable MFA =>', error) // enable-mfa.js
+```
+
+**Recommendation:** Use a structured logger such as `winston` or `pino` with log levels and sanitized error objects. Never log raw error objects in production.
+
+---
+

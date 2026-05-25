@@ -16,6 +16,12 @@ What wasn't recognized was that the header itself was client-controlled, meaning
 A control that appears to work is not the same as a control that is secure.
 Security testing must go beyond **does it block normal users** to **can an attacker bypass it deliberately**.
 
+## On inherited development patterns
+
+SEveral security issues in this codebase (including raw error logging, client-trusted headers for authorization and token handling patters) reflect practices taught during formal education rather than deliberate insecure choices. This highlights a gap in how security is integrated into software development curricula.
+
+This audit represents a deliberate effort to identify, understand and correct those inherited patterns.
+
 ## Post-Audit Cleanup
 
 Upon completion of this security audit, the following actions were taken 
