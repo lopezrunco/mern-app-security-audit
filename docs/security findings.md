@@ -649,3 +649,128 @@ console.error('Error trying to enable MFA =>', error) // enable-mfa.js
 
 ---
 
+### Finding 20: Input validation absent in all update controllers.
+
+**Severity: High**
+
+**Description:** All create controllers implement Joi validation schemas (a positive development practice). However no update controller implements any validation. All update controllers accept the entire unvalidated request body and apply it directly to the model via `doc.set(request.body)`.
+
+This inconsistency (validation on create, none on update), suggests validation was added to creation flows to solve inmediate functional problems but was never applied systematically to the full CRUD surface.
+
+### Finding 21: Mass assignment via unvalidated update controllers enables privilege escalation to ADMIN.
+
+**Location:** 
+`backend/src/controllers/user/update.js`, `backend/src/controllers/event/update.js`, `backend/src/controllers/lot/update.js`, `backend/src/controllers/ad/update.js`, `backend/src/controllers/preoffer/update.js`.
+
+**Sources:**
+- [OWASP Mass Assignment Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Mass_Assignment_Cheat_Sheet.html)
+- [CWE-915: Improperly Controlled Modification of Dynamically-Determined Object Attributes](https://cwe.mitre.org/data/definitions/915.html)
+- [OWASP Top 10 A01:2021 — Broken Access Control](https://owasp.org/Top10/A01_2021-Broken_Access_Control/)
+
+**Description:** All update controllers apply the entire unvalidated request body directly to the model using `doc.set(request.body)` followed by `doc.save()`. No field whitelistening, validation or sanitization is performed. This allows an attacker to modify any field on any model including sensitive fields as `role`, `mfaEnabled`, `password` and `email`.
+
+The user update endpoint is the most severe instance: Any authenticated user can escalate their own privileges to ADMIN by sending a single field in the update request body.
+
+```js
+// user/update.js: Entire request body applied directly.
+user.set(request.body)  // No field whitelisting.
+user.save()
+```
+
+**Evidence: PoC confirmed during audit:**
+
+Step 1: Register attacker account (BASIC role):
+
+```json
+POST /register
+=> role: "BASIC", id: "<redacted>"
+```
+
+Step 2: Update own role to ADMIN:
+
+```json
+PUT /user/<attacker_id>/update
+Authorization: Bearer <attacker_token>
+Content-Type: application/json
+
+{ "role": "ADMIN" }
+
+=> 200 OK: "User info updated successfully"
+```
+
+Step 3: Login to confirm privilege escalation:
+
+```json
+POST /login
+=> role: "ADMIN" confirmed
+```
+
+**Impact:**
+- Any self-registered user can escalate to ADMIN with a single request.
+- No exploitation of other vulenrabilities required. This is a standalone complete privilege escalation chain.
+- Combined with Finding 14 (broken role check) and Finding 2 (open registration), this creates a trivial path to full application compromise: `Register freely => Escalate to ADMIN => Bypass all role checks`.
+
+- All other update controllers are equally vulnerable to mass assignment. Event, lot, ad and preoffer models can have arbitrary fields overwritten.
+
+**Recommendation:**
+Explicitly whitelist allowed fields in every update controller:
+
+```js
+// user/update.js — safe version
+const allowedFields = ['nickname', 'phone', 'address', 'telephone']
+const updateData = Object.fromEntries(
+    Object.entries(request.body).filter(([key]) => 
+        allowedFields.includes(key)
+    )
+)
+user.set(updateData)
+user.save()
+```
+
+Never use `doc.set(request.body)` directly. Role, password, email and mfaEnable must never be updatable through the general update endpoint, they require dedicated endpoints with additional verification steps.
+
+## Vulnerability chains:
+
+### Chain 1: Anonymous user to full application compromise
+
+This chain demonstrates how an unauthenticated attacker can achieve complete administrative control of the app in three requests using only documented findings.
+
+**Severity: Critical**
+
+- Step 1: Create attacker account (Finding 2):
+
+  ```json
+  POST /register
+  No authentication required, no vetting, account immediately active.
+  => Attacker account created with role: BASIC
+  ```
+
+- Step 2: Escalate to ADMIN (Finding 21):
+
+  ```json
+  PUT /user/<attacker_id>/update
+  Authorization: Bearer <attacker_token>
+  { "role": "ADMIN" }
+  => Role updated to ADMIN in database
+  ```
+
+- Step 3: Access all admin endpoints (Finding 14):
+
+  ```
+  GET /admin/users
+  Authorization: Bearer <attacker_token>
+  userrole: ADMIN
+  => Full user list returned including all PII
+  => Any user can be deleted
+  => Any content can be modified or deleted
+  ```
+
+**Total time to full compromise:** under 60 seconds
+**Prerequisites:** None. Internet access only.
+
+**Findings involved:**
+- Finding 2 — Unauthenticated open registration
+- Finding 21 — Mass assignment privilege escalation
+- Finding 14 — Broken role-based access control
+- Finding 5 — MongoDB exposed to internet (enables direct DB access once credentials obtained)
+
