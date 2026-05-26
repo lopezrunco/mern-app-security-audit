@@ -18,7 +18,7 @@
 - [x] 14 | `frontend/src/App.jsx` | Route structure, auth guards client-side
 - [ ] 15 | `frontend/src/pages/` | Sensitive data handling, localStorage abuse
 - [ ] 16 | `frontend/src/components/` | XSS surface, `dangerouslySetInnerHTML`
-- [ ] 17 | `frontend/src/utils/` | Crypto helpers, token handling
+- [x] 17 | `frontend/src/utils/` | Crypto helpers, token handling
 - [ ] 18 | `backend/src/utils/`, `commands/` | Hardcoded secrets, insecure helpers
 
 ## Findings:
@@ -922,6 +922,31 @@ localStorage.setItem("user", JSON.stringify({
   - Frontend route protection should be treated as UX only, never as a security control.
 
 ---
+
+### Finding 25: Frontend error loggin exposes sensitive information in browser console.
+
+**Severity: Low**
+
+**Location:** `frontend/src/utils/refresh-token.js`
+
+**Description:** The refresh token utility logs raw error objects to the browser console on failure:
+
+```js
+.catch(error => {
+  console.error(error)  // Exposes error details in devtools
+  dispatch({ type: LOGOUT })
+  navigate('/login')
+})
+```
+
+In production, this exposes token refresh errors, server response details and netowrk information to anyone with browser devtools open. This extends the systemic raw error logging pattern identified in Finding 19 to the frontend layer.
+
+Additionally, any refresh failure, including server errors caused by the DoS vulnerabilities in Finding 11, silently logs out all active users with no explanation, creating a potential availability impact.
+
+**Recommendation:**
+  - Remove `console.error()` calls from production builds.
+  - Use a frontend logging service (like Sentry) that captures errors server-side without exposing them in the browser.
+  - Display a user-friendly error message rather than silently logging out.
 
 ## Vulnerability chains:
 
