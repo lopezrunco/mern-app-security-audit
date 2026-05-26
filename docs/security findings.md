@@ -12,9 +12,9 @@
 - [x] 8 | `backend/src/api.js` | CORS, global middleware, security headers
 - [x] 9 | `backend/src/routes/` | Full endpoint inventory
 - [x] 10 | `backend/src/middlewares/` | Auth guards
-- [ ] 11 | `backend/src/validators/` | Input validation coverage
-- [ ] 12 | `backend/src/models/` | Schema, mass assignment
-- [ ] 13 | `backend/src/controllers/` | Business logic
+- [x] 11 | `backend/src/validators/` | Input validation coverage
+- [x] 12 | `backend/src/models/` | Schema, mass assignment
+- [x] 13 | `backend/src/controllers/` | Business logic
 - [ ] 14 | `frontend/src/App.jsx` | Route structure, auth guards client-side
 - [ ] 15 | `frontend/src/pages/` | Sensitive data handling, localStorage abuse
 - [ ] 16 | `frontend/src/components/` | XSS surface, `dangerouslySetInnerHTML`
@@ -138,13 +138,25 @@ TLS termination in production was either handled by Heroku's built-in SSL (which
 
 ---
 
-### Finding 7: Environment variable separation.
+### Finding 7: Security-conscious development practices observed.
 
 **Severity: N/A - Positive control**
 
-**Location:** `.gitignore`, `backend/.env`, `frontend/.env`, `frontend/src/config.js`, git history
+**Location:** `.gitignore`, `backend/.env`, `frontend/.env`, `frontend/src/config.js`, `backend/src/controllers/user/`, git history
 
-**Description:** Credentials and API keys are consistently excluded from version control across the project. Both `.env` files and `config.js` (which contains hardcoded API keys) are explicitly listed in `.gitignore` across frontend and backend. Git history confirms no credential strings in any commits. This reflects deliberate secrets management discipline rather than accidental omission.
+**Description:** Despite the security issues documented in this report, several deliberate security-conscious practices were observed throughout the codebase: 
+
+- **Secrets management:** Credentials and API keys are consistently excluded from version control across the project. Both `.env` files and `config.js` (which contains hardcoded API keys) are explicitly listed in `.gitignore` across frontend and backend. Git history confirms no credential strings in any commits. This reflects deliberate secrets management discipline rather than accidental omission.
+
+- **Sensitive field exclusion from API responses:** User controllers explicitly exclude sensitive fields from database queries and responses:
+  - `user/get-all.js` and `user/get-by-id.js` use `.select('-password -mfaSecret')` to exclude sensitive fields at query level.
+  - `user/login.js` and `user/register.js` explicitly delete `password` and `mfaSecret` before sending responses.
+
+- **Mass assignment protection at creation layer:** All create controllers explicitly whitelist fields passed to the database rather than passing the full request body. Notably, `role` is hardcoded as `'BASIC'` in the register controller rather than accepted from user input, demonstrating awareness of privilege escalation risk at the creation layer.
+
+- **Input validation on create endpoints:** Joi validation schemas are consistently implemented across all create controllers with type checking, lenght limits and format validation.
+
+- **Mongoose ObjectId casting:** Mongoose's strict ObjectId type casting provides implicit protection against NoSQL injection via ID parameters. MongoDB operators passed as ID values are rejected before reaching the database.
 
 ---
 
@@ -638,12 +650,7 @@ request.user = {
 
 **Description:** Raw `console.error(error)` calls appear throughout the app including `api.js`, `check-user-credentials.js` and multiple controllers. This pattern exposes internal error details, stack traces and library internals in server logs.
 
-**Evidence:**
-```js
-console.error('Token error =>', error)         // check-user-credentials.js
-console.error('Could not connect =>', error)   // api.js
-console.error('Error trying to enable MFA =>', error) // enable-mfa.js
-```
+**Evidence:** 67 `console.error()` or `console.log()` calls across 32 controller files. Every controller in the application logs raw error objects to console without sanitization.
 
 **Recommendation:** Use a structured logger such as `winston` or `pino` with log levels and sanitized error objects. Never log raw error objects in production.
 
@@ -728,6 +735,135 @@ user.save()
 ```
 
 Never use `doc.set(request.body)` directly. Role, password, email and mfaEnable must never be updatable through the general update endpoint, they require dedicated endpoints with additional verification steps.
+
+---
+
+### Finding 22: User model missing enum constraint on role field and trim applied to password.
+
+**Severity: Medium**
+
+**Location:** `backend/src/models/user.js`
+
+**Sources:**
+- [Mongoose Schema Validation](https://mongoosejs.com/docs/validation.html)
+- [CWE-20: Improper Input Validation](https://cwe.mitre.org/data/definitions/20.html)
+
+**Description:** The user model schema has two security-relevant issues:
+
+**Issue 1: No enum constraint on role field:**
+
+  ```js
+  role: {
+    type: String,
+    required: true,
+    trim: true
+    // Missing: enum: ['BASIC', 'CONS', 'AUTHOR', 'ADMIN'].
+  }
+  ```
+
+  The `role` field accepts any string value with no validation at the database layer. Other models in the same codebase correctly use `enum` constraints on sensitive fields (`adSchema.position`, `postSchema.category`), but this pattern was not applied to the security-critical `role` field. A database-layer enum would provide defense-in-depth against arbitrary role injection even if controller validation is bypassed.
+
+**Issue 2: Trim applied to password field:**
+
+  ```js
+  password: {
+    type: String,
+    required: true,
+    trim: true  // Silently modifies passwords with spaces.
+  }
+  ```
+
+  `trim: true` silently strips leading and trailing whitespace from passwords before storage. This modifies user-supplied passwords without their knowledge, reduces effective password keyspace and creates inconsistent behavior if the authentication flow does not apply the same trimming.
+
+**Impact:**
+- Missing role enum allows arbitrary role strings to be stored, compounding Finding 21.
+- Password trimming silently weakens passwords containing spaces and creates potential authentication inconsistencies.
+
+**Recommendation:**
+
+```js
+role: {
+    type: String,
+    required: true,
+    enum: ['BASIC', 'CONS', 'AUTHOR', 'ADMIN'],
+    default: 'BASIC'
+},
+password: {
+    type: String,
+    required: true
+    // Remove trim: true
+}
+```
+
+---
+
+### Finding 23: Unvalidated user input passed to RegExp constructor | ReDoS and regex injection.
+
+**Severity: High**
+
+**Location:** `backend/src/controllers/post/search-by-title.js`, `backend/src/controllers/post/search-published-by-title.js`
+
+**Sources:**
+- [OWASP ReDoS](https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS)
+- [CWE-1333: Inefficient Regular Expression Complexity](https://cwe.mitre.org/data/definitions/1333.html)
+
+**Description:** User-supplied search input is passed directly to the JavaScript `RegExp()` constructor without sanitization or escaping:
+
+```js
+const { title } = request.query
+const regex = new RegExp(title, 'i')  // Unsanitized user input.
+postModel.find({ title: regex })
+```
+
+This creates two attack vectors:
+
+**ReDoS:** An attacker can supply a pathologically complex regex pattern that causes catastrophic backtracking in the Node.js regex engine, blocking the event loop and making the server unresponsive for all users.
+
+**Regex injection:** An attacker can use regex metacharacters to manipulate the search query:
+  - `.*` matches all posts regardless of title.
+  - `.{10000}` forces expensive pattern matching across all documents.
+  - `^(a+)+$` causes catastrophic backtracking.
+
+**Evidence:**
+  
+  - Test 1: Regex injection returning all posts:
+
+  ```json
+  GET /posts/search?title=.*
+  => 200 OK: All 12 posts returned regardless of title.
+  ```
+
+  - Test 2: ReDoS patterns tested on small dataset:
+
+  ```json
+  GET /posts/search?title=^(a+)+$
+  GET /posts/search?title=(x+x+)+y
+  => 404 ReDoS not triggered on development dataset of 12 records.
+  Risk increases significantly with dataset size in production.
+  ```
+
+**Confirmed:** Regex injection allows an unauthenticated attacker to bypass search intent and retrieve arbitrary post data. On a production dataset, ReDoS patterns could block the Node.js event loop causin denial of service for all users.
+
+**Impact:**
+  - Denial of service via event loop backing.
+  - Unauthorized data exposure via regex manipulation.
+  - Amplified by lack of rate limiting (Finding 13).
+
+**Recommendation:**
+Escape user input before passing to RegExp or use MongoDB's text search instead:
+
+```js
+const { title } = request.query
+
+// Option 1: Escape regex metacharacters.
+const escapedTitle = title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+const regex = new RegExp(escapedTitle, 'i')
+
+// Option 2: Use MongoDB text search (preferred).
+postModel.find({ $text: { $search: title } })
+```
+
+---
 
 ## Vulnerability chains:
 
