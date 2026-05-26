@@ -1,11 +1,12 @@
 ## Organizational Context
 
-This application was developed under significant time pressure with no dedicated security budget or review process. Several findings in this report reflect deliberate shortcuts taken to meet 
-delivery deadlines rather than lack of security awareness.
+This application was developed under significant time pressure with no dedicated security budget or review process. Several findings in this report reflect deliberate shortcuts taken to meet delivery deadlines rather than lack of security awareness.
 
 This is a documented pattern in software development known as security debt: security controls that are deferred, disabled, or never implemented due to business constraints. Like technical debt, security debt compounds over time and becomes increasingly expensive to remediate.
 
 The developer (the author of this report) was also the original developer of the application. This dual perspective, having built the system and now auditing it, provides unique insight into the  decisions made and the pressures that drove them.
+
+**Update (May 2026):** The application has been selected as the foundation for future production development. This changes the nature of this project from a retrospective audit to an active security remediation engagement. All Critical and High findings must be resolved before the codebase is used as a development base.
 
 ## Developer perspective on Finding 14
 
@@ -22,10 +23,9 @@ SEveral security issues in this codebase (including raw error logging, client-tr
 
 This audit represents a deliberate effort to identify, understand and correct those inherited patterns.
 
-## Post-Audit Cleanup
+## Post-Audit Cleanup | Deprecated services
 
-Upon completion of this security audit, the following actions were taken 
-to ensure no residual risk remains from the deprecated application:
+Actions taken to close residual risk from the deprecated production development:
 
 | Action | Service | Date |
 |--------|---------|------|
@@ -36,3 +36,19 @@ to ensure no residual risk remains from the deprecated application:
 | GitHub repository made private or deleted | GitHub | TBD |
 | JWT secret rotated | Local `.env` | TBD |
 | Database password rotated | Local `.env` | TBD |
+
+## Remediation Roadmap — Future Production Use
+
+Critical and High findings that must be resolved before this codebase 
+is used as a foundation for new development:
+
+| Priority | Finding | Severity | Status |
+|----------|---------|----------|--------|
+| 1 | Finding 14 — Broken role check | Critical | Pending |
+| 2 | Finding 21 — Mass assignment privilege escalation | Critical | Pending |
+| 3 | Finding 2 — Open registration endpoint | High | Pending |
+| 4 | Finding 18 — Role missing from JWT | High | Pending |
+| 5 | Finding 13 — Wildcard CORS | High | Pending |
+| 6 | Finding 11 — Outdated dependencies | High | Pending |
+| 7 | Finding 24 — Auth state in localStorage | High | Pending |
+| 8 | Finding 20 — No validation on update endpoints | High | Pending |

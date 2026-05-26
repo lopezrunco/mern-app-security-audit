@@ -2,16 +2,17 @@
 
 ## Overview
 
-This project is a security-focused audit and rebuild of a legacy full-stack web application built with the MERN stack (MongoDB, Express, React, Node.js).
+This project is a security-focused audit and remediation of a legacy full-stack web application built with the MERN stack (MongoDB, Express, React, Node.js).
 
-The original application was developed during 2023 and later became deprecated. This repository documents the process of:
+The original application was developed during 2023 and later became deprecated. It has since been selected as the foundation for future production development, making security remediation a business requirement. 
 
-- Restoring the legacy system to a working baseline
-- Identifying functional and security-related issues
-- Performing structured security testing
-- Applying fixes and documenting remediation steps
+This repository documents the complete application security lifecycle:
 
-The goal of this project is to conduct a real-world application security (AppSec) workflow on a legacy codebase.
+- Auditing the legacy codebase against real attack scenarios.
+- Identifying and documenting vulnerabilities with working PoCs.
+- Remediating Critical and High severity findings.
+- Retesting to verify fixes are effective.
+- Delivering a hardened codebase ready for future development.
 
 ## Objectives
 
@@ -21,6 +22,7 @@ The goal of this project is to conduct a real-world application security (AppSec
 - Identify common web application vulnerabilities
 - Document findings in a professional security-report format
 - Apply and validate security fixes
+- Deliver a hardened codebase suitable as a foundation for future production development.
 
 ## Repository Structure
 
@@ -39,16 +41,14 @@ The goal of this project is to conduct a real-world application security (AppSec
   → Final write-ups, vulnerability summaries, PoCs
 ```
 
-## Workflow
+## Project phases
 
 For this project I will follow this AppSec workflow:
 
-- [] **Phase 1: Audit:** Find and document without touching the code.
+- [x] **Phase 1: Audit:** Structured vulnerability assessment o the legacy codebase.
 
-- [] **Phase 2: Threat model & report:** Write up all the findings (`/reports`) prioritizing by severity. 
+- [ ] **Phase 2: Report (in progress):** Professional security findings documentation.
 
-- [] **Phase 3: Remediation:** Work in `/app` fixing the findings and comuenting the changes. 
+- [ ] **Phase 3: Remediation (starting):** Apply fixes to `/app` directory, documented per finding.
 
-- [] **Phase 4: Retest:** Go back through the findings list and verify each fix actually closes the vulnerability. Re-run the PoCs against the patched version.  
-
-- [] **Phase 5: Remediation report:** Document what was fixed, how, and the retest results. This will be the closing artifact. 
+- [ ] **Phase 4: Retest (after remediation):** Verifying each fix closes the vulnerability. Re-running PoCs against the patched version.
