@@ -1,4 +1,6 @@
-# Security findings
+# Initial findings (Pre audit)
+
+These observations were made before establishing the formal audit methodology. They have been incorporated and expanded in the main security findings report. This documents is preserved as a record of the initial reconnaissance phase.
 
 ## Finding 1: MFA disabled at Frontend reducer.
 

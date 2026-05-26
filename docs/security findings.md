@@ -15,7 +15,7 @@
 - [x] 11 | `backend/src/validators/` | Input validation coverage
 - [x] 12 | `backend/src/models/` | Schema, mass assignment
 - [x] 13 | `backend/src/controllers/` | Business logic
-- [ ] 14 | `frontend/src/App.jsx` | Route structure, auth guards client-side
+- [x] 14 | `frontend/src/App.jsx` | Route structure, auth guards client-side
 - [ ] 15 | `frontend/src/pages/` | Sensitive data handling, localStorage abuse
 - [ ] 16 | `frontend/src/components/` | XSS surface, `dangerouslySetInnerHTML`
 - [ ] 17 | `frontend/src/utils/` | Crypto helpers, token handling
@@ -862,6 +862,64 @@ const regex = new RegExp(escapedTitle, 'i')
 // Option 2: Use MongoDB text search (preferred).
 postModel.find({ $text: { $search: title } })
 ```
+
+---
+
+### Finding 24: Authentication state stored in localStorage | Client-side role bypass.
+
+**Severity: High**
+
+**Location:** `frontend/src/App.jsx`
+
+**Sources:**
+- [OWASP HTML5 Security — Local Storage](https://cheatsheetseries.owasp.org/cheatsheets/HTML5_Security_Cheat_Sheet.html#local-storage)
+- [CWE-922: Insecure Storage of Sensitive Information](https://cwe.mitre.org/data/definitions/922.html)
+
+**Description:** The app stores all authentication state in `localStorage` including the user object, role, token and refresh token. On every page load, `role` is read directly from `localStorage` into application state and used by `RequireAuth` to determine route access.
+
+```js
+const initialState = {
+  isAuthenticated: !!localStorage.getItem("token"),
+  user: JSON.parse(localStorage.getItem("user")),
+  role: localStorage.getItem("role"),
+  token: localStorage.getItem("token"),
+  refreshToken: localStorage.getItem("refreshToken"),
+};
+```
+
+Since localStorage is fully accessible to JavaScript running in the browser, any attacker physical access to the browser or an XSS vector can manipulate these values directly.
+
+**EVidence: localStorage role manipulation confirmed:**
+
+```js
+// Running in browser devtools console while logged in as BASIC user:
+
+// Step 1: Modify role and user object in localStorage:
+localStorage.setItem("role", "ADMIN")
+localStorage.setItem("user", JSON.stringify({
+  ...JSON.parse(localStorage.getItem("user")),
+  role: "ADMIN"
+}))
+
+// Step 2: Hard refresh.
+// Result: UI renders as ADMIN, admin routes accessible in browser.
+```
+
+**Confirmed:** After localStorage manipulation and page refresh, a BASIC user's browser renders the full admin UI. The `RequireAuth` component grants access to all admin routes based solely on the manipulated localStorage value.
+
+**Note:** This attack requires no server interaction and leaves no server-side audit trail. It's purely a client-side bypass and does not grant actual backend privileges on its own, however, combined with Finding 14 (broken backend role via `userrole` header), full application compromise is achieved at both layers.
+
+**Impact:**
+  - Frontend route protection via `RequireAuth` is completely bypassable.
+  - MFA state (`mfaEnabled`) stored in localStorage can be disabled: `localStorage.setItem("user", JSON.stringify({...user, mfaEnabled: false}))`.
+  - Refresh token stored in localStorage is vulnerable to XSS theft. Any XSS vulnerability allows permanent session hijacking.
+  - Combined with Finding 14 (broken backend role check), there is no effective access control at any layer.
+
+**Recommendation:**
+  - Store refrsh tokens in `HttpOnly cookies` inaccessible to JS entirely.
+  - Never store role or security-sensitive flags in localStorage.
+  - Derive authentication state from the verified JWT on each request rather than from client-stored values.
+  - Frontend route protection should be treated as UX only, never as a security control.
 
 ---
 
