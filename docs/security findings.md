@@ -114,6 +114,8 @@ TLS termination in production was either handled by Heroku's built-in SSL (which
 
 **Location:** MongoDB Atlas dashboard
 
+**Source:** [Configure IP Access List Entries in MongoDB](https://www.mongodb.com/docs/atlas/security/ip-access-list/?interface-default-atlas-cli=atlas-cli)
+
 **Description:** The MongoDB Atlas cluster was configured with a network access rule of `0.0.0.0/0` during its entire production lifetime. This setting was confirmed active in the Atlas dashboard post-deprecation.
 
 **Evidence:**
@@ -127,8 +129,6 @@ TLS termination in production was either handled by Heroku's built-in SSL (which
 **Impact:** Combined with Finding 4 (weak database password), this means the database was fully exposed to the internet with no network-layer protection. Any attacker with the credentials could connect directly to MongoDB from anywhere in the world without needing to compromise the application server first. 
 
 **Recommendation:** In future projects, restrict Atlas network access to specific server IPs only. For dynamic infrastructure, use VPC peering or Atlas Private Endpoints rather than allowlisting `0.0.0.0/0`.
-
-**Source:** (Configure IP Access List Entries in MongoDB)[https://www.mongodb.com/docs/atlas/security/ip-access-list/?interface-default-atlas-cli=atlas-cli]
 
 ---
 
@@ -411,7 +411,7 @@ Any domain can make cross-origin requests to the API. Combined with JWT-based au
 app.use(express.json())
 ```
 
-No `limit` option is configured. An attacker can send arbitrarily large JSON payloads, potentially causing memory exhaustation and DoS.
+No `limit` option is configured. An attacker can send arbitrarily large JSON payloads, potentially causing memory exhaustion and DoS.
 
 **Issue 3: Missing security middleware (Medium):**
 
@@ -684,6 +684,8 @@ This inconsistency (validation on create, none on update), suggests validation w
 
 ### Finding 21: Mass assignment via unvalidated update controllers enables privilege escalation to ADMIN.
 
+**Severity: Critical**
+
 **Location:** 
 `backend/src/controllers/user/update.js`, `backend/src/controllers/event/update.js`, `backend/src/controllers/lot/update.js`, `backend/src/controllers/ad/update.js`, `backend/src/controllers/preoffer/update.js`.
 
@@ -872,7 +874,7 @@ This creates two attack vectors:
   Risk increases significantly with dataset size in production.
   ```
 
-**Confirmed:** Regex injection allows an unauthenticated attacker to bypass search intent and retrieve arbitrary post data. On a production dataset, ReDoS patterns could block the Node.js event loop causin denial of service for all users.
+**Confirmed:** Regex injection allows an unauthenticated attacker to bypass search intent and retrieve arbitrary post data. On a production dataset, ReDoS patterns could block the Node.js event loop causing denial of service for all users.
 
 **Impact:**
   - Denial of service via event loop blocking.
@@ -1023,7 +1025,7 @@ Additionally, any refresh failure, including server errors caused by the DoS vul
   if (!allowedTypes.includes(imgElement.type))
   ```
 
-  `imgElement.type` is derived from the file extension reported by the browser, not the actual file content. Renaming `malicious.php` to `malocious.jpg` bypasses this check entirely. Real MIME type validation requires reading magic bytes server-side.
+  `imgElement.type` is derived from the file extension reported by the browser, not the actual file content. Renaming `malicious.php` to `malicious.jpg` bypasses this check entirely. Real MIME type validation requires reading magic bytes server-side.
 
 - **Issue 2: DOMPurify misapplied to binary data:**
   ```js
@@ -1176,7 +1178,7 @@ If the seeder was ever run against production (which is likely given the commit 
 const userPassword = bcrypt.hashSync('supersecret', 2)
 ```
 
-This confirms the finding in `register.js`. Salt rounds of 2 means password hashing completes in milliseconds. OWASP recommends a minimum of 10 rounds. With rounds of 2, a stolen database can be brute-forced orders if magnitude faster than with proper configuration. 
+This confirms the finding in `register.js`. Salt rounds of 2 means password hashing completes in milliseconds. OWASP recommends a minimum of 10 rounds. With rounds of 2, a stolen database can be brute-forced orders of magnitude faster than with proper configuration. 
 
 **Evidence:** Timing comparision using the app's own bcrypt dependency:
 
@@ -1184,13 +1186,13 @@ This confirms the finding in `register.js`. Salt rounds of 2 means password hash
 
 *Bcrypt timing comparison*
 
-**Impact:** An attacker with a stolen copy of the database can attempt passwords 45x faster at the app's configured rounds-2 vs the OWASP recommended minimum of ounds-10. Against a database of real users, a wordlist of the 10.000 most common passwords would be exhausted in approximately **15 seconds** at rounds-2 vs 11 minutes at rounds-10.
+**Impact:** An attacker with a stolen copy of the database can attempt passwords 45x faster at the app's configured rounds-2 vs the OWASP recommended minimum of rounds-10. Against a database of real users, a wordlist of the 10.000 most common passwords would be exhausted in approximately **15 seconds** at rounds-2 vs 11 minutes at rounds-10.
 
 The hash prefix `$2b$02$` embedded in every stored password hash publicly confirms the rounds configuration to any attacker who obtains the database.
 
 ---
 
-### Finding 30: Seeder commited to public repository with production credentials pattern.
+### Finding 30: Seeder committed to public repository with production credentials pattern.
 
 **Severity: Low/Informational**
 
