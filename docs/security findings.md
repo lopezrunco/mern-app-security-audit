@@ -120,6 +120,10 @@ TLS termination in production was either handled by Heroku's built-in SSL (which
 - Atlas IP Access List entry: `0.0.0.0/0` — Status: Active
 - No IP restriction rules present
 
+![MongoDB IP Access list open](./screenshots/mongodb%20atlas%20allows%20connections%20from%20any%20ip.jpg)
+
+*MongoDB IP Access list allowing connections from any IP address..*
+
 **Impact:** Combined with Finding 4 (weak database password), this means the database was fully exposed to the internet with no network-layer protection. Any attacker with the credentials could connect directly to MongoDB from anywhere in the world without needing to compromise the application server first. 
 
 **Recommendation:** In future projects, restrict Atlas network access to specific server IPs only. For dynamic infrastructure, use VPC peering or Atlas Private Endpoints rather than allowlisting `0.0.0.0/0`.
@@ -495,6 +499,10 @@ Any authenticated user can bypass all role checks by adding a singles HTTP heade
   => 200 OK, role: "BASIC"
   ```
 
+  ![Account registration](./screenshots/register%20attacker%20account.jpg)
+
+  *Unauthenticated user registration succesfully creates a BASIC account.*
+
 - Step 2: Access admin user list with role bypass header:
   ```json
   GET /admin/users
@@ -503,6 +511,10 @@ Any authenticated user can bypass all role checks by adding a singles HTTP heade
   => 200 OK (Full user list returned including emails phone numbers, addresses of all users)
   ```
 
+  ![Admin user list response](./screenshots/attacker%20get%20users%20with%20admin%20role.jpg)
+
+  *Unauthorized access to admin user listing via role header manipulation*
+
 - Step 3: Delete any user with role bypass header:
   ```json
   DELETE /admin/users/<target_id>
@@ -510,6 +522,10 @@ Any authenticated user can bypass all role checks by adding a singles HTTP heade
   userrole: ADMIN
   => 200 OK (User deleted successfully)
   ```
+
+  ![Privileged delete operation on user resource](./screenshots/attacker%20deletes%20legitimate%20user%20using%20admin%20role.jpg)
+
+  *Access control bypass enables deletion of arbitrary user accounts.*
 
 **Impact:**
 Any authenticated user (including self-registered accounts with no vetting) can instantly escalate to ADMIN privileges by adding a single HTTP header. This enables:
@@ -664,6 +680,8 @@ request.user = {
 
 This inconsistency (validation on create, none on update), suggests validation was added to creation flows to solve immediate functional problems but was never applied systematically to the full CRUD surface.
 
+---
+
 ### Finding 21: Mass assignment via unvalidated update controllers enables privilege escalation to ADMIN.
 
 **Location:** 
@@ -674,7 +692,7 @@ This inconsistency (validation on create, none on update), suggests validation w
 - [CWE-915: Improperly Controlled Modification of Dynamically-Determined Object Attributes](https://cwe.mitre.org/data/definitions/915.html)
 - [OWASP Top 10 A01:2021 — Broken Access Control](https://owasp.org/Top10/A01_2021-Broken_Access_Control/)
 
-**Description:** All update controllers apply the entire unvalidated request body directly to the model using `doc.set(request.body)` followed by `doc.save()`. No field whitelisting, validation or sanitization is performed. This allows an attacker to modify any field on any model including sensitive fields as `role`, `mfaEnabled`, `password` and `email`.
+**Description:** All update controllers apply the entire unvalidated request body directly to the model using `doc.set(request.body)` followed by `doc.save()`. No field whitelisting, validation or sanitization is performed. This allows an attacker to modify any field on any model including sensitive fields such as `role`, `mfaEnabled`, `password` and `email`.
 
 The user update endpoint is the most severe instance: Any authenticated user can escalate their own privileges to ADMIN by sending a single field in the update request body.
 
@@ -693,6 +711,10 @@ POST /register
 => role: "BASIC", id: "<redacted>"
 ```
 
+![Account registration](./screenshots/register%20attacker%20account.jpg)
+
+*Successful self-registration using a BASIC account.*
+
 Step 2: Update own role to ADMIN:
 
 ```json
@@ -705,6 +727,10 @@ Content-Type: application/json
 => 200 OK: "User info updated successfully"
 ```
 
+![Privilege escalation request.](./screenshots/attacker%20updating%20own%20role%20to%20admin.jpg)
+
+*Role updated to ADMIN through mass assignment.*
+
 Step 3: Login to confirm privilege escalation:
 
 ```json
@@ -712,9 +738,13 @@ POST /login
 => role: "ADMIN" confirmed
 ```
 
+![Admin access confirmation](./screenshots/attacker%20privilege%20escalation%20confirmed.jpg)
+
+*Subsequent login confirms administrative privileges.*
+
 **Impact:**
 - Any self-registered user can escalate to ADMIN with a single request.
-- No exploitation of other vulnerabilities required. This is a standalone complete privilege escalation chain.
+- No exploitation of other vulnerabilities required. This is a standalone privilege escalation vulnerability.
 - Combined with Finding 14 (broken role check) and Finding 2 (open registration), this creates a trivial path to full application compromise: `Register freely => Escalate to ADMIN => Bypass all role checks`.
 
 - All other update controllers are equally vulnerable to mass assignment. Event, lot, ad and preoffer models can have arbitrary fields overwritten.
@@ -905,6 +935,10 @@ localStorage.setItem("user", JSON.stringify({
 // Result: UI renders as ADMIN, admin routes accessible in browser.
 ```
 
+![Modify role and user object in localStorage](./screenshots/modify%20role%20and%20user%20object%20in%20localStorage.jpg)
+
+*Successful modification of role and user object in localStorage using devtools.*
+
 **Confirmed:** After localStorage manipulation and page refresh, a BASIC user's browser renders the full admin UI. The `RequireAuth` component grants access to all admin routes based solely on the manipulated localStorage value.
 
 **Note:** This attack requires no server interaction and leaves no server-side audit trail. It's purely a client-side bypass and does not grant actual backend privileges on its own, however, combined with Finding 14 (broken backend role via `userrole` header), full application compromise is achieved at both layers.
@@ -1072,6 +1106,10 @@ Post content is stored as raw HTML in MongoDB and served directly by the API wit
   => Every visitor to /articulos/:id executes attacker JS
   => Session tokens stolen from localStorage
   ```
+
+  ![Attacker succesfully creates a malicious post](./screenshots/attacker%20succesfully%20creates%20malicious%20post.jpg)
+  
+  *Attacker succesfully creates a malicious post.*
 
 **Impact:**
   - Stored XSS with platform-wide reach affecting all unauthenticated visitors.
