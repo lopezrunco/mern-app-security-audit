@@ -3,8 +3,11 @@
 ## MERN Application Security audit
 
 **Application:** Campo Eventos | Live Livestock Auction Platform
+
 **Audit period:** May 2026
+
 **Auditor:** Damián López Runco (original developer)
+
 **Report version:** 1.0
 
 ## Overview

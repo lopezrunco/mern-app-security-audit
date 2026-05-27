@@ -3,13 +3,16 @@
 ## Auditoría de Seguridad en Aplicación MERN
 
 **Aplicación:** Campo Eventos | Plataforma de preofertas para remates ganaderos
+
 **Período de la auditoría:** Mayo de 2026
+
 **Auditor:** Damián López Runco (desarrollador original)
+
 **Versión:** 1.0
 
 ## Resumen
 
-Este reporte presenta los hallazgos de una auditoría de seguridad realizada sobre una aplicación MERN discontinuada. La aplicación fue desarrollada en 2023 para operar en conjunto con transmisiones de remates de ganado en Uruguay. El proyecto fue creado para Campo TV y las transmisiones se realizaban a través de los canales VTV y Campo TV.
+Este reporte refleja los hallazgos de una auditoría de seguridad realizada sobre una aplicación MERN discontinuada. La aplicación fue desarrollada en 2023 para operar en conjunto con transmisiones de remates de ganado en Uruguay. El proyecto fue creado para Campo TV y las transmisiones se realizaban a través de los canales VTV y Campo TV.
 
 Siguiendo un cambio de dirección en Campo TV, el proyecto fue pausado y más tarde discontinuado. De todas maneras, el proyecto se ha conservado como posible base para futuros desarrollos, lo que convierte esta auditoría en un requisito obligatorio.
 
