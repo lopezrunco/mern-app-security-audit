@@ -16,10 +16,10 @@
 - [x] 12 | `backend/src/models/` | Schema, mass assignment
 - [x] 13 | `backend/src/controllers/` | Business logic
 - [x] 14 | `frontend/src/App.jsx` | Route structure, auth guards client-side
-- [ ] 15 | `frontend/src/pages/` | Sensitive data handling, localStorage abuse
+- [x] 15 | `frontend/src/pages/` | Sensitive data handling, localStorage abuse
 - [x] 16 | `frontend/src/components/` | XSS surface, `dangerouslySetInnerHTML`
 - [x] 17 | `frontend/src/utils/` | Crypto helpers, token handling
-- [ ] 18 | `backend/src/utils/`, `commands/` | Hardcoded secrets, insecure helpers
+- [x] 18 | `backend/src/utils/`, `commands/` | Hardcoded secrets, insecure helpers
 
 ## Findings:
 
@@ -1135,6 +1135,86 @@ Post content is stored as raw HTML in MongoDB and served directly by the API wit
 
 ---
 
+### Finding 28: Seeder contains hardcoded default credentials
+
+**Severity: Medium**
+
+**Location:** `app\backend\src\commands\seeder.js`
+
+```js
+const userPassword = bcrypt.hashSync('supersecret', 2)
+
+users.push({
+    nickname: 'Admin',
+    email: 'email@email.com',
+    password: userPassword,
+    role: 'ADMIN'
+})
+```
+
+The seeder creates an ADMIN account with:
+
+- Predictable email `email@email.com`
+- Harcoded password `supersecret` (the same weak password used throughout testing).
+- 2 bcrypt salt rounds.
+
+If the seeder was ever run against production (which is likely given the commit history showing seeder updates) this ADMIN account existed with a known password. 
+
+---
+
+### Finding 29: bcrypt salt rounds of 2 confirmed in seeder
+
+**Severity: High**
+
+**Location:** `app\backend\src\commands\seeder.js`
+
+**Sources:**
+- [OWASP Password Storage Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#bcrypt)
+- [CWE-916: Use of Password Hash With Insufficient Computational Effort](https://cwe.mitre.org/data/definitions/916.html)
+
+```js
+const userPassword = bcrypt.hashSync('supersecret', 2)
+```
+
+This confirms the finding in `register.js`. Salt rounds of 2 means password hashing completes in milliseconds. OWASP recommends a minimum of 10 rounds. With rounds of 2, a stolen database can be brute-forced orders if magnitude faster than with proper configuration. 
+
+**Evidence:** Timing comparision using the app's own bcrypt dependency:
+
+![Bcrypt timing comparison](./screenshots/bcrypt%20timing%20comparison.jpg)
+
+*Bcrypt timing comparison*
+
+**Impact:** An attacker with a stolen copy of the database can attempt passwords 45x faster at the app's configured rounds-2 vs the OWASP recommended minimum of ounds-10. Against a database of real users, a wordlist of the 10.000 most common passwords would be exhausted in approximately **15 seconds** at rounds-2 vs 11 minutes at rounds-10.
+
+The hash prefix `$2b$02$` embedded in every stored password hash publicly confirms the rounds configuration to any attacker who obtains the database.
+
+---
+
+### Finding 30: Seeder commited to public repository with production credentials pattern.
+
+**Severity: Low/Informational**
+
+**Location:** `app\backend\src\commands\seeder.js`
+
+```js
+users.push({
+  nickname: 'Admin',
+  email: 'email@email.com',
+  password: userPassword,
+  role: 'ADMIN'
+})
+```
+
+The seeder was commited to the public repository revealing:
+  - The admin account email format
+  - The default password (`supersecret` is hardcoded as the hash input)
+  - The role taxonomy (`ADMIN`, `CONS`, `BASIC`)
+  - Internal data structure of all models
+
+Anyone who read the public repository knew exactly how to log in as admin if the seeder had been run.
+
+---
+
 ## Vulnerability chains:
 
 ### Chain 1: Anonymous user to full application compromise
@@ -1250,5 +1330,19 @@ Step 4: Every visitor executes attacker JavaScript:
 - Finding 27 — Stored XSS via dangerouslySetInnerHTML
 - Finding 24 — Auth tokens in localStorage (stealable via XSS)
 - Finding 11 — Vulnerable DOMPurify not applied where needed
+
+---
+
+## Final finding count
+
+| Severity | Count |
+| --- | --- |
+| Critical | 3 (Findings 14, 21, 27) |
+| High | 11 (Findings 2, 5, 8, 11, 13, 18, 20, 23, 24, 26, 29) |
+| Medium | 7 (Findings 4, 10, 12, 15, 16, 22, 28) |
+| Low | 5 (Findings 1, 3, 17, 25, 30) |
+| Informational | 4 (Findings 6, 9, 19, 27 note) |
+| Positive controls | 1 (Finding 7) |
+| Vulnerability chains | 3 |
 
 ---
