@@ -41,6 +41,37 @@ This repository documents the complete application security lifecycle:
   - CWE database
   - Claude AI
 
+## Audit methodology
+
+This assessment was performed through a combination of:
+  - Manual code review of backend and frontend codebase.
+  - Dynamic testing using Insomnia and browser devtools.
+  - Proof of concept exploitation in a local dev ebvironment.
+  - Dependency analysis via `npm audit`.
+  - Configuration review of Firebase, MongoDB and Cloudinary.
+
+All vulnerabilities marked as confirmed include working reproduction steps tested against the running application locally.
+
+## Evidence standard
+
+Each confirmed finding includes at least one of:
+  - Reproducible HTTP request/response trace.
+  - Code snippet from affected source file.
+  - Screenshots captured during live testing.
+  - Observable impact in application state (UI or database).
+
+## Test environment
+
+  - Application: MERN stack legacy app (2023).
+  - Node.js: v22.12.0
+  - MongoDB: Atlas cluster
+  - Browser: Brave and Firefox
+  - API testing: Insomnia
+  - Frontend build tool: Vite/REact
+
+All test were executed in a controlled local/development environment.
+No production systems were intentionally harmed during this audit.
+
 ## Repository Structure
 
 ```
