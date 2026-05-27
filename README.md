@@ -24,6 +24,23 @@ This repository documents the complete application security lifecycle:
 - Apply and validate security fixes
 - Deliver a hardened codebase suitable as a foundation for future production development.
 
+## Tooling
+
+**Security testing:**
+  - Insomnia
+  - npm audit
+
+**Development:** 
+  - Node.js
+  - React
+  - MongoDB
+  - VSCode
+
+**References & assistance:**
+  - OWASP Cheat Sheets
+  - CWE database
+  - Claude AI
+
 ## Repository Structure
 
 ```
