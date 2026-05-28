@@ -4,22 +4,22 @@ This application was developed under significant time pressure with no dedicated
 
 This is a documented pattern in software development known as security debt: security controls that are deferred, disabled, or never implemented due to business constraints. Like technical debt, security debt compounds over time and becomes increasingly expensive to remediate.
 
-The developer (the author of this report) was also the original developer of the application. This dual perspective, having built the system and now auditing it, provides unique insight into the  decisions made and the pressures that drove them.
+The developer (the author of this report) was also the original developer of the application. This dual perspective, having built the system and now auditing it, provides unique insight into the decisions made and the pressures that drove them.
 
-**Update (May 2026):** The application has been selected as the foundation for future production development. This changes the nature of this project from a retrospective audit to an active security remediation engagement. All Critical and High findings must be resolved before the codebase is used as a development base.
+**Update (May 2026):** The application has been selected as the foundation for future production development. This changes the nature of the project from a retrospective audit into an active security remediation effort. All Critical and High findings must be resolved before the codebase is used as a development base.
 
 ## Developer perspective on Finding 14
 
-I implemented the `checkUserRole` middleware with genuine intent to protect admin endpoints. Commit history shows it being progressively applied across the codebase as a deliberate security measure. At the time of development, the middleware appeared to function correctly in manual testing (Requests without the header were rejected with 403).
+I implemented the `checkUserRole` middleware with genuine intent to protect admin endpoints. Commit history shows it being progressively applied across the codebase as a deliberate security measure. At the time of development, the middleware appeared to function correctly in manual testing (Requests without the header were rejected with a 403 reponse).
 
-What wasn't recognized was that the header itself was client-controlled, meaning any attacker who knew the header name could supply it. The middleware was tested for the **presence and value** of a header, not for the **trustworthiness** of its source.
+What was not recognized at the time was that the header itself was client-controlled, meaning any attacker who knew the header name could supply it. The middleware was tested for the **presence and value** of a header, not for the **trustworthiness** of its source.
 
 A control that appears to work is not the same as a control that is secure.
 Security testing must go beyond **does it block normal users** to **can an attacker bypass it deliberately**.
 
 ## On inherited development patterns
 
-SEveral security issues in this codebase (including raw error logging, client-trusted headers for authorization and token handling patters) reflect practices taught during formal education rather than deliberate insecure choices. This highlights a gap in how security is integrated into software development curricula.
+Several security issues in this codebase (including raw error logging, client-trusted headers for authorization and token handling patterns) reflect practices taught during formal education rather than deliberate insecure choices. This highlights a gap in how security is integrated into software development curricula.
 
 This audit represents a deliberate effort to identify, understand and correct those inherited patterns.
 
@@ -39,8 +39,7 @@ Actions taken to close residual risk from the deprecated production development:
 
 ## Remediation Roadmap — Future Production Use
 
-Critical and High findings that must be resolved before this codebase 
-is used as a foundation for new development:
+Critical and High findings that must be resolved before this codebase is used as a foundation for new development:
 
 | Priority | Finding | Severity | Status |
 |----------|---------|----------|--------|

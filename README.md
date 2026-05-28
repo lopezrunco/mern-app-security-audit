@@ -14,6 +14,15 @@ This repository documents the complete application security lifecycle:
 - Retesting to verify fixes are effective.
 - Delivering a hardened codebase ready for future development.
 
+## How to navigate this repo
+
+Start here:
+1. `docs/reports/executive-summary-EN.md` => one page overview of findings
+2. `docs/reports/security-findings.md` => full technical findings with PoCs
+3. `docs/organizational-context.md` => context and developer perspective
+4. `/legacy` => original unmodified codebase that was audited
+5. `/app` => patched version (remediation in progress)
+
 ## Objectives
 
 - Reconstruct and stabilize a legacy full-stack application
@@ -95,8 +104,8 @@ For this project I will follow this AppSec workflow:
 
 - [x] **Phase 1: Audit:** Structured vulnerability assessment o the legacy codebase.
 
-- [ ] **Phase 2: Report (in progress):** Professional security findings documentation.
+- [x] **Phase 2: Report:** Professional security findings documentation.
 
-- [ ] **Phase 3: Remediation (starting):** Apply fixes to `/app` directory, documented per finding.
+- [ ] **Phase 3: Remediation (in progress):** Apply fixes to `/app` directory, documented per finding.
 
 - [ ] **Phase 4: Retest (after remediation):** Verifying each fix closes the vulnerability. Re-running PoCs against the patched version.

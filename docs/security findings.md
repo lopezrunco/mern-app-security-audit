@@ -1148,7 +1148,7 @@ const userPassword = bcrypt.hashSync('supersecret', 2)
 
 users.push({
     nickname: 'Admin',
-    email: 'email@email.com',
+    email: '<default-admin-email>',
     password: userPassword,
     role: 'ADMIN'
 })
@@ -1156,7 +1156,7 @@ users.push({
 
 The seeder creates an ADMIN account with:
 
-- Predictable email `email@email.com`
+- Predictable email `<default-admin-email>`
 - Harcoded password `supersecret` (the same weak password used throughout testing).
 - 2 bcrypt salt rounds.
 
@@ -1201,7 +1201,7 @@ The hash prefix `$2b$02$` embedded in every stored password hash publicly confir
 ```js
 users.push({
   nickname: 'Admin',
-  email: 'email@email.com',
+  email: '<default-admin-email>',
   password: userPassword,
   role: 'ADMIN'
 })
