@@ -17,11 +17,12 @@ This repository documents the complete application security lifecycle:
 ## How to navigate this repo
 
 Start here:
-1. `docs/reports/executive-summary-EN.md` => one page overview of findings
-2. `docs/reports/security-findings.md` => full technical findings with PoCs
-3. `docs/organizational-context.md` => context and developer perspective
-4. `/legacy` => original unmodified codebase that was audited
-5. `/app` => patched version (remediation in progress)
+1. [Executive Summary EN](./reports/executive-summary%20(EN).md) => one page overview of findings (English version)  
+2. [Executive Summary ES](./reports/executive-summary%20(original%20ES).md) => one page overview of findings (Spanish version)
+3. [Security Findings](./docs/security%20findings.md) => full technical findings with PoCs  
+4. [Organizational Context](./reports/organizational%20context.md) => context and developer perspective  
+5. [`/legacy`](./legacy/) => original unmodified codebase that was audited  
+6. [`/app`](./app/) => patched version (remediation in progress)
 
 ## Objectives
 

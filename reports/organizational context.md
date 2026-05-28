@@ -8,7 +8,7 @@ The developer (the author of this report) was also the original developer of the
 
 **Update (May 2026):** The application has been selected as the foundation for future production development. This changes the nature of the project from a retrospective audit into an active security remediation effort. All Critical and High findings must be resolved before the codebase is used as a development base.
 
-## Developer perspective on Finding 14
+### Developer perspective on Finding 14
 
 I implemented the `checkUserRole` middleware with genuine intent to protect admin endpoints. Commit history shows it being progressively applied across the codebase as a deliberate security measure. At the time of development, the middleware appeared to function correctly in manual testing (Requests without the header were rejected with a 403 reponse).
 
@@ -17,7 +17,7 @@ What was not recognized at the time was that the header itself was client-contro
 A control that appears to work is not the same as a control that is secure.
 Security testing must go beyond **does it block normal users** to **can an attacker bypass it deliberately**.
 
-## On inherited development patterns
+### On inherited development patterns
 
 Several security issues in this codebase (including raw error logging, client-trusted headers for authorization and token handling patterns) reflect practices taught during formal education rather than deliberate insecure choices. This highlights a gap in how security is integrated into software development curricula.
 
