@@ -1,20 +1,21 @@
-module.exports = (roles) => { // Wrap a function inside another to pass role as a parameter
-    return (request, response, next) => {
-        const userRole = request.headers['userrole']
+const { userModel } = require('../models/user')
 
-        if (userRole) {
-            const roleMatches = roles.find(role => role === userRole)
-
-            if (roleMatches) {
-                next()
-            } else {
+module.exports = (roles) => {
+    return async (request, response, next) => {
+        try {
+            const user = await userModel.findById(request.user.id)
+            if (!user) return response.status(401).json({
+                message: 'Unauthorized'
+            })
+            if (!roles.includes(user.role)) {
                 return response.status(403).json({
                     message: 'Forbidden access'
                 })
             }
-        } else {
-            return response.status(401).json({
-                message: 'Invalid credentials'
+            next()
+        } catch (error) {
+            return response.status(500).json({
+                message: 'Internal server error'
             })
         }
     }

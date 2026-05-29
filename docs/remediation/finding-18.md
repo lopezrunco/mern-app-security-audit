@@ -1,6 +1,7 @@
-## Finding 18 — Remediation
+## Remediation Finding 18
 
 **Status:** Fixed
+
 **Fix date:** 2026-05-29
 
 **What was changed:**
