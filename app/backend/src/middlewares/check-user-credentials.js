@@ -6,7 +6,7 @@ module.exports = (tokenType = 'CONSUMER') => {
         const token = request.headers.authorization // Obtains the authorization from the request header
 
         try {
-            const decoded = jwt.verify(token, process.env.JWT_KEY) // Validates the token sended by the user
+            const decoded = jwt.verify(token, process.env.JWT_SECRET) // Validates the token sended by the user
             // Checks the token type
             if (decoded.type === tokenType) {
                 // Inserts the user data in the request

@@ -10,7 +10,7 @@ Create .env file with the environment variables
 
 ```bash
 PORT=3000
-JWT_KEY=5tj567trgh567456h
+JWT_SECRET=5tj567trgh567456h
 DB_HOST=clustername.abcdefg.mongodb.net
 DB_PORT=27017
 DB_NAME=dbname

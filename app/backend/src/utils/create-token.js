@@ -8,5 +8,5 @@ module.exports = (user, tokenType, expiresIn) => {
         email: user.email,
         role: user.role,
         type: tokenType
-    }, process.env.JWT_KEY, { expiresIn })
+    }, process.env.JWT_SECRET, { expiresIn })
 }
