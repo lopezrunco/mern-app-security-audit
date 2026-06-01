@@ -4,7 +4,21 @@ module.exports = (request, response) => {
     postModel
         .findOne({ _id: request.params.id })
         .then(post => {
-            post.set(request.body)
+            const allowedFields = [
+                'title', 
+                'category', 
+                'content', 
+                'headline', 
+                'picture',
+                'tags',
+                'link',
+                'published'
+            ]
+            const updateData = Object.fromEntries(Object.entries(request.body).filter(([key]) => 
+                allowedFields.includes(key)
+            ))
+
+            post.set(updateData)
             post.save().then(() => {
                 response.status(200).json({
                     message: 'Post updated successfully'

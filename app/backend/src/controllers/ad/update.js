@@ -4,7 +4,12 @@ module.exports = (request, response) => {
     adModel
         .findOne({ _id: request.params.id })
         .then(ad => {
-            ad.set(request.body)
+            const allowedFields = ['title', 'position', 'imgUrl', 'link', 'published']
+            const updateData = Object.fromEntries(Object.entries(request.body).filter(([key]) => 
+                allowedFields.includes(key)
+            ))
+
+            ad.set(updateData)
             ad.save().then(() => {
                 response.status(200).json({
                     message: 'Ad updated successfully'

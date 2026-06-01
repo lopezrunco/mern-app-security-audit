@@ -4,7 +4,12 @@ module.exports = (request, response) => {
     userModel
         .findOne({ _id: request.params.id })
         .then(user => {
-            user.set(request.body)
+            const allowedFields = ['nickname', 'phone', 'address', 'telephone']
+            const updateData = Object.fromEntries(Object.entries(request.body).filter(([key]) => 
+                allowedFields.includes(key)
+            ))
+
+            user.set(updateData)
             user.save().then(() => {
                 response.status(200).json({
                     message: 'User info updated successfully'

@@ -4,8 +4,33 @@ module.exports = (request, response) => {
     lotModel
         .findOne({ _id: request.params.id })
         .then(lot => {
-            lot.set(request.body)
+            const allowedFields = [
+                'title', 
+                'category', 
+                'name', 
+                'description', 
+                'rp',
+                'pedigree',
+                'animals',
+                'weight',
+                'age',
+                'class',
+                'state',
+                'observations',
+                'race',
+                'location',
+                'certificate',
+                'type',
+                'open',
+                'sold',
+                'completed',
+                'YTVideoSrc'
+            ]
+            const updateData = Object.fromEntries(Object.entries(request.body).filter(([key]) => 
+                allowedFields.includes(key)
+            ))
 
+            lot.set(updateData)
             lot.save().then(() => {
                 response.status(200).json({
                     message: 'Lot updated successfully'

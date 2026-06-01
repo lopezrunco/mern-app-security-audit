@@ -4,8 +4,14 @@ module.exports = (request, response) => {
     preofferModel
         .findOne({ _id: request.params.id })
         .then(preoffer => {
-            preoffer.set(request.body)
+            const allowedFields = [
+                'accepted'
+            ]
+            const updateData = Object.fromEntries(Object.entries(request.body).filter(([key]) => 
+                allowedFields.includes(key)
+            ))
 
+            preoffer.set(updateData)
             preoffer.save()
             .then(() => {
                 response.status(200).json({

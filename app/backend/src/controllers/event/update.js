@@ -4,8 +4,27 @@ module.exports = (request, response) => {
     eventModel
         .findOne({ _id: request.params.id })
         .then(event => {
-            event.set(request.body)
+            const allowedFields = [
+                'title', 
+                'eventType', 
+                'category', 
+                'description', 
+                'company',
+                'organizer',
+                'breeder',
+                'funder',
+                'location',
+                'duration',
+                'startBroadcastTimestamp',
+                'broadcastLinkId',
+                'externalLink',
+                'coverImgName'    
+            ]
+            const updateData = Object.fromEntries(Object.entries(request.body).filter(([key]) => 
+                allowedFields.includes(key)
+            ))
 
+            event.set(updateData)
             event.save().then(() => {
                 response.status(200).json({
                     message: 'Event updated successfully'
