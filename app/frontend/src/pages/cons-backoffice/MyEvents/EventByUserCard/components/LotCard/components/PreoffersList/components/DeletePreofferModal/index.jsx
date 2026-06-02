@@ -57,7 +57,6 @@ function DeleteLotModal({ preofferId, closeFunction }) {
       method: "DELETE",
       headers: {
         Authorization: authState.token,
-        UserRole: authState.role,
         "Content-Type": "application/json",
       },
     })

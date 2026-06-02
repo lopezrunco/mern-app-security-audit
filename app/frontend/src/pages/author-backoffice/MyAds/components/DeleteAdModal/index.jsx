@@ -56,7 +56,6 @@ export const DeleteAdModal = ({ adId, adTitle, closeFunction }) => {
       method: "DELETE",
       headers: {
         Authorization: authState.token,
-        UserRole: authState.role,
         "Content-Type": "application/json",
       },
     })

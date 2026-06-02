@@ -120,7 +120,6 @@ export const CreateAd = () => {
       method: "POST",
       headers: {
         Authorization: authState.token,
-        UserRole: authState.role,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({

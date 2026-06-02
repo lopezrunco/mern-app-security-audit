@@ -22,8 +22,9 @@ app.use(cors({
 }))
 app.use(express.json({ limit: '10kb' }))
 app.use(rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 100
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: process.env.NODE_ENV === 'production' ? 100 : 2000,
+    message: 'Too many requests from this IP, please try agin after 15 minutes.'
 }))
 app.use('/', routes)
 

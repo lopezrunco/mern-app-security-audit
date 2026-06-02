@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import DOMPurify from 'dompurify'
 
 import { getDate } from "../../../../../utils/get-date";
 
@@ -62,7 +63,7 @@ function Card({ myPost }) {
             <p>
               <b>{myPost.headline}</b>
             </p>
-            <div dangerouslySetInnerHTML={{ __html: myPost.content }} />
+            <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(myPost.content) }} />
             {myPost.link && (
               <a
                 className="button view-more"

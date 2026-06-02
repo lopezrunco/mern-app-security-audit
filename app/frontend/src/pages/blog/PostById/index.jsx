@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import React, { useContext, useEffect, useReducer } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import DOMPurify from 'dompurify'
 
 import imgUrl from "../../../assets/no-media.jpg";
 
@@ -202,7 +203,7 @@ const Post = ({ post }) => {
           <p>
             <b>{headline}</b>
           </p>
-          <div dangerouslySetInnerHTML={{ __html: content }} />
+          <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content) }} />
           {link && (
             <a
               className="button view-more"
