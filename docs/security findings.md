@@ -1082,7 +1082,6 @@ Use Cloudinary's signed upload API: The backend generates a short-lived signatur
 - [React dangerouslySetInnerHTML documentation](https://react.dev/reference/react-dom/components/common#dangerously-setting-the-inner-html)
 
 **Description:** Two page components render post content directly into the DOM using React's `dangerouslySetInnerHTML` without sanitization:
-
   - `PostById/index.jsx`: **Public page**, no authentication required.
   - `MyPostById/Card/index.jsx`: Authenticated but still vulnerable.
 
