@@ -1,6 +1,29 @@
+const Joi = require('joi')
 const { userModel } = require('../../models/user')
 
 module.exports = (request, response) => {
+    const schema = Joi.object({
+        nickname: Joi.string()
+            .regex(/^[a-zA-Z0-9,.ñÁÉÍÓÚáéíóú ]*$/)
+            .optional(),
+        phone: Joi.number()
+            .min(0)
+            .optional(),
+        address: Joi.string()
+            .regex(/^[a-zA-Z0-9,.ñÁÉÍÓÚáéíóú ]*$/)
+            .optional(),
+        telephone: Joi.number()
+            .allow(null, '')
+            .optional()
+    })
+
+    const validationResult = schema.validate(request.body)
+    if (validationResult.error) {
+        return response.status(400).json({ 
+            message: 'Invalid input data provided' 
+        })
+    }
+
     userModel
         .findOne({ _id: request.params.id })
         .then(user => {

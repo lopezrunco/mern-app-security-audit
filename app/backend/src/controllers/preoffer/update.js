@@ -1,6 +1,19 @@
+const Joi = require('joi')
 const { preofferModel } = require('../../models/preoffer')
 
 module.exports = (request, response) => {
+    const schema = Joi.object({
+        accepted: Joi.boolean()
+            .optional()
+    })
+
+    const validationResult = schema.validate(request.body)
+    if (validationResult.error) {
+        return response.status(400).json({ 
+            message: 'Invalid input data provided' 
+        })
+    }
+
     preofferModel
         .findOne({ _id: request.params.id })
         .then(preoffer => {

@@ -1,6 +1,49 @@
+const Joi = require('joi')
 const { postModel } = require('../../models/post')
 
 module.exports = (request, response) => {
+    const schema = Joi.object({
+        title: Joi.string()
+            .optional()
+            .min(2)
+            .max(200),
+        category: Joi.string()
+            .optional()
+            .min(2)
+            .max(50),
+        content: Joi.string()
+            .allow(null, '')
+            .optional()
+            .min(2)
+            .max(15000),
+        headline: Joi.string()
+            .allow(null, '')
+            .optional()
+            .min(2)
+            .max(500),
+        picture: Joi.string()
+            .allow(null, '')
+            .optional()
+            .min(2)
+            .max(200),
+        tags: Joi.array()
+            .optional(),
+        link: Joi.string()
+            .allow(null, '')
+            .optional()
+            .min(2)
+            .max(200),
+        published: Joi.boolean()
+            .optional()
+    })
+
+    const validationResult = schema.validate(request.body)
+    if (validationResult.error) {
+        return response.status(400).json({ 
+            message: 'Invalid input data provided' 
+        })
+    }
+
     postModel
         .findOne({ _id: request.params.id })
         .then(post => {
