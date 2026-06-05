@@ -73,12 +73,23 @@ import "./App.scss";
 // Create context to manage authentication data type
 export const AuthContext = createContext();
 
-// Initial state of auth context
+const getRoleFromToken = (token) => {
+    if (!token) return null
+    try {
+        const payload = JSON.parse(atob(token.split('.')[1]))
+        return payload.role ?? null
+    } catch {
+        return null
+    }
+}
+
+const token = localStorage.getItem("token")
+
 const initialState = {
-  isAuthenticated: !!localStorage.getItem("token"),
+  isAuthenticated: !!token,
   user: JSON.parse(localStorage.getItem("user")),
-  role: localStorage.getItem("role"),
-  token: localStorage.getItem("token"),
+  role: getRoleFromToken(token), // Derived from JWT
+  token: token,
   id: localStorage.getItem("id"),
   refreshToken: localStorage.getItem("refreshToken"),
   showingLoader: false,
@@ -90,7 +101,6 @@ const reducer = (state, action) => {
     case LOGIN:
       // Set user data in local storage
       localStorage.setItem("user", JSON.stringify(action.payload.user));
-      localStorage.setItem("role", action.payload.user.role);
       localStorage.setItem("token", action.payload.user.token);
       localStorage.setItem("id", action.payload.user.id);
       localStorage.setItem("refreshToken", action.payload.user.refreshToken);
@@ -99,7 +109,7 @@ const reducer = (state, action) => {
         ...state,
         isAuthenticated: true,
         user: action.payload.user,
-        role: action.payload.user.role,
+        role: getRoleFromToken(action.payload.user.token),
         token: action.payload.user.token,
         id: action.payload.user.id,
         refreshToken: action.payload.user.refreshToken,
