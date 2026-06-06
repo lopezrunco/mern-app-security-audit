@@ -33,7 +33,7 @@ module.exports = (request, response) => {
 
     if (!validationResult.error) {
 
-        user.password = bcrypt.hashSync(user.password, 2)
+        user.password = bcrypt.hashSync(user.password, 12)
 
         userModel.create({
             nickname: user.nickname,
