@@ -12,7 +12,7 @@ const updatePreoffer = require('../controllers/preoffer/update')
 const deletePreoffer = require('../controllers/preoffer/delete')
 const getPostsByTag = require('../controllers/post/get-by-tag')
 
-router.post('/preoffers', getAllPreoffers)
+router.post('/preoffers', checkUserCredentials(), checkUserRole(['ADMIN', 'CONS', 'BASIC']), getAllPreoffers)
 router.get('/preoffers/:id', checkUserCredentials(), checkUserRole(['ADMIN', 'CONS', 'BASIC']), getPreofferById)
 router.get('/preoffers/user/:id', checkUserCredentials(), checkUserRole(['ADMIN', 'CONS', 'BASIC']), getPreoffersByUserId)
 router.post('/preoffers/create', checkUserCredentials(), checkUserRole(['ADMIN', 'CONS', 'BASIC']), createPreoffer)
