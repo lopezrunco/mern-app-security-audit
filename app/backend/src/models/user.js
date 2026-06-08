@@ -16,13 +16,13 @@ const userSchema = new Schema({
     },
     password: {
         type: String,
-        required: true,
-        trim: true
+        required: true
     },
     role: {
         type: String,
         required: true,
-        trim: true
+        enum: ['BASIC', 'CONS', 'AUTHOR', 'ADMIN'],
+        default: 'BASIC'
     },
     telephone: {
         type: Number,
