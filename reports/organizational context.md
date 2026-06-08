@@ -43,11 +43,11 @@ Critical and High findings that must be resolved before this codebase is used as
 
 | Priority | Finding | Severity | Status |
 |----------|---------|----------|--------|
-| 1 | Finding 14 — Broken role check | Critical | Pending |
-| 2 | Finding 21 — Mass assignment privilege escalation | Critical | Pending |
-| 3 | Finding 2 — Open registration endpoint | High | Pending |
-| 4 | Finding 18 — Role missing from JWT | High | Pending |
-| 5 | Finding 13 — Wildcard CORS | High | Pending |
-| 6 | Finding 11 — Outdated dependencies | High | Pending |
-| 7 | Finding 24 — Auth state in localStorage | High | Pending |
-| 8 | Finding 20 — No validation on update endpoints | High | Pending |
+| 1 | Finding 14 — Broken role check | Critical | Fixed |
+| 2 | Finding 21 — Mass assignment privilege escalation | Critical | Fixed |
+| 3 | Finding 2 — Open registration endpoint | High | Fixed |
+| 4 | Finding 18 — Role missing from JWT | High | Fixed |
+| 5 | Finding 13 — Wildcard CORS | High | Fixed |
+| 6 | Finding 11 — Outdated dependencies | High | Fixed |
+| 7 | Finding 24 — Auth state in localStorage | High | Fixed |
+| 8 | Finding 20 — No validation on update endpoints | High | Fixed |

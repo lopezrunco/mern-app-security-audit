@@ -85,18 +85,13 @@ No production systems were intentionally harmed during this audit.
 ## Repository Structure
 
 ```
-/legacy
-  /frontend   → Original frontend (unchanged snapshot)
-  /backend    → Original backend (unchanged snapshot)
+/legacy (Unchanged version of the application)
 
-/app
-  → Patched version of the application
+/app (Patched version of the application)
 
 /docs
-  → Security findings, threat model, notes, and methodology
 
 /reports
-  → Final write-ups, vulnerability summaries, PoCs
 ```
 
 ## Project phases
@@ -107,6 +102,6 @@ For this project I will follow this AppSec workflow:
 
 - [x] **Phase 2: Report:** Professional security findings documentation.
 
-- [ ] **Phase 3: Remediation (in progress):** Apply fixes to `/app` directory, documented per finding.
+- [x] **Phase 3: Remediation:** 16 of 30 findings remediated.
 
-- [ ] **Phase 4: Retest (after remediation):** Verifying each fix closes the vulnerability. Re-running PoCs against the patched version.
+- [x] **Phase 4: Retest:** Verified each fix closes the vulnerability. Re-running PoCs against the patched version.
