@@ -105,3 +105,5 @@ For this project I will follow this AppSec workflow:
 - [x] **Phase 3: Remediation:** 16 of 30 findings remediated.
 
 - [x] **Phase 4: Retest:** Verified each fix closes the vulnerability. Re-running PoCs against the patched version.
+
+- [ ] **Phase 5: Burp Suite validation**: Passive and active scanning against legacy codebase. Repeater-based retest of remediated Critical findings. Comparison of automated vs manual finding coverage.
