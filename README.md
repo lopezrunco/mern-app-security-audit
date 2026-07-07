@@ -106,4 +106,9 @@ For this project I will follow this AppSec workflow:
 
 - [x] **Phase 4: Retest:** Verified each fix closes the vulnerability. Re-running PoCs against the patched version.
 
-- [ ] **Phase 5: Burp Suite validation**: Passive and active scanning against legacy codebase. Repeater-based retest of remediated Critical findings. Comparison of automated vs manual finding coverage.
+- [ ] **Phase 5: Tooling-assisted validation:**
+  - [ ] **5a: Semgrep SAST scan (static analysis):** Automated source code scanning to identify vulnerable patterns across the legacy codebase. Comparision against manual findings.
+  - [ ] **5b: Burpsuite DAST scan (Dynamic analysis):**
+    - Passive scan: traffic analysis via intercepting proxy.
+    - Active scan: automated probing of running application.
+    - Repeater: manual retest of Critical findings PoCs.
