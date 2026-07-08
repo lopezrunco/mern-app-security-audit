@@ -2,7 +2,8 @@ const { postModel } = require('../../models/post')
 
 module.exports = (request, response) => {
     const { userId, title } = request.query
-    const regex = new RegExp(title, 'i') // Case-insensitive search
+    const escapedTitle = title ? title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') : ''
+    const regex = new RegExp(escapedTitle, 'i') // Case-insensitive search
     const userFilter = { userId };
 
     const pagination = {
