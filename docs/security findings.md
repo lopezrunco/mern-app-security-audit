@@ -1216,6 +1216,18 @@ Anyone who read the public repository knew exactly how to log in as admin if the
 
 ---
 
+### Finding 31: No CSRF protection on Express API.
+
+**Severity: Low**
+
+**Discovered by:** Semgrep SAST scan (Phase 5)
+
+**Location:** `backend/src/api.js`
+
+**Description:** No CSRF middleware is configured in the Express application. While JWT-based APIs are generally less vulnerable to traditional CSRF than cookie-based auth, the recent remediation of Finding 24 introduced HttpOnly cookie storage for refresh tokens, which creates a CSRF surface that did not previously exist.
+
+**Recommendation:** Implement CSRF token validation or use SameSite=Strict cookie attribute (already implemented in Finding 24 remediation) as the primary CSRF mitigation. Verify SameSite=Strict is enforced on the refreshToken cookie.
+
 ## Vulnerability chains:
 
 ### Chain 1: Anonymous user to full application compromise
